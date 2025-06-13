@@ -26,4 +26,4 @@ dist-ssr
 #Archivos a ignorar
 **/venv/
 **/node_modules/
-**/.env
+/SpeakCity_Backend/.env
