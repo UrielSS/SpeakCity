@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import ChatBox from './ChatBox'
+import Model from './components/Model'
 
 function App() {
   const [users, setUsers] = useState([])
@@ -25,7 +26,9 @@ function App() {
       </div>
 
        <h1>SpeakCity - IA Chat</h1>
-      
+      <div> 
+        <Model />
+      </div>
       <ChatBox />
       <div className="card">
         <h2>
