@@ -1,61 +1,128 @@
-import React, { useRef, useEffect } from "react";
-import * as THREE from 'three';
+import React, { useRef, useEffect, useState } from "react";
 
 const Model = () => {
     const mountRef = useRef(null);
-    //Constantes del número de calles
     const numVertStreets = 4;
     const numHorStreets = 3;
-    
-    
-    useEffect(()=>{
-        //Referencia al canvas del mapa
+
+    const [segmentoCerrado, setSegmentoCerrado] = useState(false);
+    const segmentoCerradoRef = useRef(false);
+
+    const yRef = useRef(0);
+
+    useEffect(() => {
         const canvas = mountRef.current;
         const ctx = canvas.getContext("2d");
 
-        //Obtención de coordenadas de las calles
         const wVS = Math.floor(canvas.width / numVertStreets);
         const wHS = Math.floor(canvas.height / numHorStreets);
 
-        // Ancho de las calles
         ctx.lineWidth = 10;
 
-        //Dibujo de las calles verticales
-        for (var i = 1; i < numVertStreets; i++ ){
+        const drawGrid = () => {
+            ctx.strokeStyle = 'black';
+
+            // Calles verticales normales
+            for (let i = 1; i < numVertStreets; i++) {
+                // Si es la 2ª calle vertical (índice 2) y el segmento está cerrado,
+                // dibuja parte del segmento en rojo
+                if (i === 2 && segmentoCerradoRef.current) {
+                    // Parte antes del segmento cerrado
+                    ctx.beginPath();
+                    ctx.moveTo(wVS * i, 0);
+                    ctx.lineTo(wVS * i, wHS);
+                    ctx.stroke();
+
+                    // Segmento cerrado (en rojo)
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'yellow';
+                    ctx.moveTo(wVS * i, wHS);
+                    ctx.lineTo(wVS * i, 2 * wHS);
+                    ctx.stroke();
+                    ctx.strokeStyle = 'black'; // Restaurar color
+
+                    // Parte después del segmento cerrado
+                    ctx.beginPath();
+                    ctx.moveTo(wVS * i, 2 * wHS);
+                    ctx.lineTo(wVS * i, canvas.height);
+                    ctx.stroke();
+                } else {
+                    // Dibujar calle normal
+                    ctx.beginPath();
+                    ctx.moveTo(wVS * i, 0);
+                    ctx.lineTo(wVS * i, canvas.height);
+                    ctx.stroke();
+                }
+            }
+
+            // Calles horizontales (normales)
+            ctx.strokeStyle = 'black';
+            for (let i = 1; i < numHorStreets; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, wHS * i);
+                ctx.lineTo(canvas.width, wHS * i);
+                ctx.stroke();
+            }
+        };
+
+
+        const x = wVS * 2; // 2ª calle vertical
+        const radius = 6;
+        const speed = 1;
+
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+
+            // Dibuja el punto rojo
             ctx.beginPath();
+            ctx.arc(x, yRef.current, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'red';
+            ctx.fill();
 
-            // Set a start-point
-            ctx.moveTo(wVS*i,0);
+            // Coordenadas del segmento cerrado (entre 2 calles horizontales)
+            const inicioSegmento = wHS;
+            const finSegmento = 2 * wHS;
 
-            // Set an end-point
-            ctx.lineTo(wVS*i,canvas.height);
+            const enSegmentoCerrado =
+                yRef.current >= inicioSegmento &&
+                yRef.current <= finSegmento &&
+                segmentoCerradoRef.current;
 
-            // Draw it
-            ctx.stroke();
-        }
+            if (!enSegmentoCerrado) {
+                yRef.current += speed;
+                if (yRef.current > canvas.height) {
+                    yRef.current = 0;
+                }
+            }
 
-        //Dibujo de calles horizontales
-        for (var i = 1; i < numHorStreets; i++ ){
-            ctx.beginPath();
+            requestAnimationFrame(animate);
+        };
 
-            // Set a start-point
-            ctx.moveTo(0,wHS*i);
-
-            // Set an end-point
-            ctx.lineTo(canvas.width,wHS*i);
-
-            // Draw it
-            ctx.stroke();
-        }
-
-        //Almacenar intersecciones?
-        //Definir sentidos?
-
-
+        animate();
     }, []);
+
+    // Funciones de control
+    const cerrarSegmento = () => {
+        setSegmentoCerrado(true);
+        segmentoCerradoRef.current = true;
+    };
+
+    const abrirSegmento = () => {
+        setSegmentoCerrado(false);
+        segmentoCerradoRef.current = false;
+    };
+
     return (
-        <canvas ref= {mountRef} width= {500} height= {400}></canvas>
-    )
+        <div>
+            <canvas ref={mountRef} width={500} height={400}></canvas>
+            <div style={{ marginTop: "10px" }}>
+                <button onClick={cerrarSegmento}>Cerrar Segmento</button>
+                <button onClick={abrirSegmento}>Abrir Segmento</button>
+            </div>
+        </div>
+    );
 };
 
 export default Model;
+
