@@ -3,45 +3,39 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import ChatBox from './ChatBox'
+import Model from './Model'
 
 function App() {
   const [users, setUsers] = useState([])
 
-  useEffect(()=>{
-    fetch('http://localhost:5000/api/users')
-    .then(res => res.json())
-    .then(data =>setUsers(data.users))
-  }, []);
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
+    <div className="app-container">
+     
+      {/* Header principal */}
+      <header className="app-header">
+        <h1 className="app-title">SpeakCity</h1>
+        <p className="app-subtitle">Hablando con la ciudad</p>
+      </header>
 
-       <h1>SpeakCity - IA Chat</h1>
-      
-      <ChatBox />
-      <div className="card">
-        <h2>
-          <ul>
-            {users.map((user)=>(
-              <li key={user.id}>
-                {user.name}
-              </li>
-            ))}
-          </ul>
-        </h2>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-    </>
+      {/* Contenido principal */}
+      <main className="main-content">
+        {/* Layout de chat y mapa */}
+        <div className="app-layout">
+          {/* Sección del chat */}
+          <section className="chat-section">
+            <ChatBox />
+          </section>
+
+          {/* Sección del mapa */}
+          <section className="map-section">
+            <div className="map-placeholder">
+              <h3>Mapa de la Ciudad</h3>
+              <Model />
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
   )
 }
 

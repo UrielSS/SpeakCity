@@ -1,2 +1,6 @@
 **/venv/
 **/node_modules/
+**/.env
+**/DS_Store
+.DS_Store
+SpeakCity_Backend/__pycache__/main.cpython-313.pyc
