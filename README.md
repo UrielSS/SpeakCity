@@ -144,48 +144,13 @@ Edita `SpeakCity_Frontend/src/index.css`:
 ```
 
 ### Tipografía
-El sistema usa la fuente Inter (estilo Apple). Para cambiar:
+El sistema usa la fuente Inter. Para cambiar:
 ```css
 font-family: 'Tu-Fuente', -apple-system, BlinkMacSystemFont, sans-serif;
 ```
 
-## 🔍 Troubleshooting
-
-### Backend no inicia
-```bash
-# Verificar Python
-python3 --version
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Verificar puerto
-lsof -i :5000
-```
-
-### Frontend no conecta
-```bash
-# Verificar CORS
-# El backend debe estar en puerto 5000
-# El frontend debe estar en puerto 5173/5174
-```
-
 ### Modo Demo
 Si no tienes API key, el sistema funciona en modo demo con respuestas predefinidas.
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crea una rama para tu feature
-3. Commit tus cambios
-4. Push a la rama
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
-
-## 🆘 Soporte
 
 
 ## 👥 Hecho por:
