@@ -53,6 +53,9 @@ function ChatBox() {
         if (data.demo_mode) {
           setBackendStatus('demo');
         }
+        
+        // Mostrar notificación de comando procesado
+        mostrarNotificacionComando(data.response);
       } else {
         setError(data.error || 'Error desconocido');
         if (data.suggestion) {
@@ -65,6 +68,64 @@ function ChatBox() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const mostrarNotificacionComando = (comando) => {
+    // Crear una notificación visual del comando procesado
+    const notificacion = document.createElement('div');
+    notificacion.className = 'comando-notificacion';
+    notificacion.innerHTML = `
+      <div class="notificacion-contenido">
+        <h4>✅ Comando Ejecutado</h4>
+        <p><strong>Acción:</strong> ${comando.accion}</p>
+        <p><strong>Calle:</strong> ${comando.calle}</p>
+        <p><strong>Causa:</strong> ${comando.causa}</p>
+        <p><strong>Prioridad:</strong> ${comando.prioridad}</p>
+      </div>
+    `;
+    
+    // Agregar estilos
+    notificacion.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      max-width: 300px;
+      animation: slideIn 0.5s ease-out;
+    `;
+    
+    // Agregar animación CSS
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notificacion);
+    
+    // Remover la notificación después de 4 segundos
+    setTimeout(() => {
+      notificacion.style.animation = 'slideOut 0.5s ease-in';
+      notificacion.style.transform = 'translateX(100%)';
+      notificacion.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(notificacion);
+      }, 500);
+    }, 4000);
   };
 
   const handleKeyPress = (e) => {

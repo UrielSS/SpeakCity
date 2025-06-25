@@ -1,127 +1,482 @@
 import React, { useRef, useEffect, useState } from "react";
+import './Model.css';
 
 const Model = () => {
     const mountRef = useRef(null);
+    const [estadoMapa, setEstadoMapa] = useState({
+        calles_cerradas: [],
+        semaforos: {},
+        vehiculos: [],
+        incidentes: {}
+    });
+    const [error, setError] = useState(null);
+
+    // Configuración del mapa
     const numVertStreets = 4;
     const numHorStreets = 3;
+    const canvasWidth = 500;
+    const canvasHeight = 400;
+    const wVS = Math.floor(canvasWidth / numVertStreets);
+    const wHS = Math.floor(canvasHeight / numHorStreets);
 
-    const [segmentoCerrado, setSegmentoCerrado] = useState(false);
-    const segmentoCerradoRef = useRef(false);
+    // Mapeo de calles a posiciones
+    const callesPosiciones = {
+        'V1': 1, 'V2': 2, 'V3': 3, 'V4': 4,
+        'H1': 1, 'H2': 2, 'H3': 3
+    };
 
-    const yRef = useRef(0);
+    // Colores para semáforos
+    const coloresSemaforos = {
+        'verde': '#00FF00',
+        'amarillo': '#FFFF00',
+        'rojo': '#FF0000'
+    };
 
+    // Función para obtener el estado del mapa desde el backend
+    const obtenerEstadoMapa = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/mapa/estado');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setEstadoMapa(data.estado);
+                    setError(null);
+                }
+            }
+        } catch (err) {
+            setError('Error conectando con el backend');
+            console.error('Error obteniendo estado del mapa:', err);
+        }
+    };
+
+    // Actualizar estado del mapa cada 100ms
     useEffect(() => {
-        const canvas = mountRef.current;
-        const ctx = canvas.getContext("2d");
-
-        const wVS = Math.floor(canvas.width / numVertStreets);
-        const wHS = Math.floor(canvas.height / numHorStreets);
-
-        ctx.lineWidth = 10;
-
-        const drawGrid = () => {
-            ctx.strokeStyle = 'black';
-
-            // Calles verticales normales
-            for (let i = 1; i < numVertStreets; i++) {
-                // Si es la 2ª calle vertical (índice 2) y el segmento está cerrado,
-                // dibuja parte del segmento en rojo
-                if (i === 2 && segmentoCerradoRef.current) {
-                    // Parte antes del segmento cerrado
-                    ctx.beginPath();
-                    ctx.moveTo(wVS * i, 0);
-                    ctx.lineTo(wVS * i, wHS);
-                    ctx.stroke();
-
-                    // Segmento cerrado (en rojo)
-                    ctx.beginPath();
-                    ctx.strokeStyle = 'yellow';
-                    ctx.moveTo(wVS * i, wHS);
-                    ctx.lineTo(wVS * i, 2 * wHS);
-                    ctx.stroke();
-                    ctx.strokeStyle = 'black'; // Restaurar color
-
-                    // Parte después del segmento cerrado
-                    ctx.beginPath();
-                    ctx.moveTo(wVS * i, 2 * wHS);
-                    ctx.lineTo(wVS * i, canvas.height);
-                    ctx.stroke();
-                } else {
-                    // Dibujar calle normal
-                    ctx.beginPath();
-                    ctx.moveTo(wVS * i, 0);
-                    ctx.lineTo(wVS * i, canvas.height);
-                    ctx.stroke();
-                }
-            }
-
-            // Calles horizontales (normales)
-            ctx.strokeStyle = 'black';
-            for (let i = 1; i < numHorStreets; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0, wHS * i);
-                ctx.lineTo(canvas.width, wHS * i);
-                ctx.stroke();
-            }
-        };
-
-
-        const x = wVS * 2; // 2ª calle vertical
-        const radius = 6;
-        const speed = 1;
-
-        const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-
-            // Dibuja el punto rojo
-            ctx.beginPath();
-            ctx.arc(x, yRef.current, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = 'red';
-            ctx.fill();
-
-            // Coordenadas del segmento cerrado (entre 2 calles horizontales)
-            const inicioSegmento = wHS;
-            const finSegmento = 2 * wHS;
-
-            const enSegmentoCerrado =
-                yRef.current >= inicioSegmento &&
-                yRef.current <= finSegmento &&
-                segmentoCerradoRef.current;
-
-            if (!enSegmentoCerrado) {
-                yRef.current += speed;
-                if (yRef.current > canvas.height) {
-                    yRef.current = 0;
-                }
-            }
-
-            requestAnimationFrame(animate);
-        };
-
-        animate();
+        const interval = setInterval(obtenerEstadoMapa, 100);
+        return () => clearInterval(interval);
     }, []);
 
-    // Funciones de control
-    const cerrarSegmento = () => {
-        setSegmentoCerrado(true);
-        segmentoCerradoRef.current = true;
+    // Función para dibujar el mapa
+    const dibujarMapa = (ctx) => {
+        // Limpiar canvas
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // Dibujar fondo
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Dibujar calles verticales
+        for (let i = 1; i < numVertStreets; i++) {
+            const calle = `V${i}`;
+            const x = wVS * i;
+            
+            // Verificar si la calle está cerrada
+            const calleCerrada = estadoMapa.calles_cerradas.includes(calle);
+            
+            if (calleCerrada) {
+                // Calle cerrada - dibujar en rojo
+                ctx.strokeStyle = '#FF0000';
+                ctx.lineWidth = 12;
+            } else {
+                // Calle abierta - dibujar en negro
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 8;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvasHeight);
+            ctx.stroke();
+
+            // Dibujar semáforo en la intersección
+            if (estadoMapa.semaforos[calle]) {
+                const estadoSemaforo = estadoMapa.semaforos[calle].estado;
+                const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
+                
+                ctx.fillStyle = colorSemaforo;
+                ctx.beginPath();
+                ctx.arc(x, 20, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Borde del semáforo
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // Dibujar calles horizontales
+        for (let i = 1; i < numHorStreets; i++) {
+            const calle = `H${i}`;
+            const y = wHS * i;
+            
+            // Verificar si la calle está cerrada
+            const calleCerrada = estadoMapa.calles_cerradas.includes(calle);
+            
+            if (calleCerrada) {
+                // Calle cerrada - dibujar en rojo
+                ctx.strokeStyle = '#FF0000';
+                ctx.lineWidth = 12;
+            } else {
+                // Calle abierta - dibujar en negro
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 8;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvasWidth, y);
+            ctx.stroke();
+
+            // Dibujar semáforo en la intersección
+            if (estadoMapa.semaforos[calle]) {
+                const estadoSemaforo = estadoMapa.semaforos[calle].estado;
+                const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
+                
+                ctx.fillStyle = colorSemaforo;
+                ctx.beginPath();
+                ctx.arc(20, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Borde del semáforo
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // Dibujar vehículos
+        estadoMapa.vehiculos.forEach(vehiculo => {
+            if (!vehiculo.activo) return;
+
+            const calle = vehiculo.calle;
+            const posicion = vehiculo.posicion;
+            
+            if (calle.startsWith('V')) {
+                // Vehículo en calle vertical
+                const calleIndex = parseInt(calle.substring(1));
+                const x = wVS * calleIndex;
+                const y = posicion;
+                
+                // Verificar si la calle está cerrada
+                if (estadoMapa.calles_cerradas.includes(calle)) return;
+                
+                // Dibujar vehículo
+                ctx.fillStyle = vehiculo.color;
+                ctx.fillRect(x - 6, y - 4, 12, 8);
+                
+                // Borde del vehículo
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x - 6, y - 4, 12, 8);
+                
+            } else if (calle.startsWith('H')) {
+                // Vehículo en calle horizontal
+                const calleIndex = parseInt(calle.substring(1));
+                const x = posicion;
+                const y = wHS * calleIndex;
+                
+                // Verificar si la calle está cerrada
+                if (estadoMapa.calles_cerradas.includes(calle)) return;
+                
+                // Dibujar vehículo
+                ctx.fillStyle = vehiculo.color;
+                ctx.fillRect(x - 4, y - 6, 8, 12);
+                
+                // Borde del vehículo
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x - 4, y - 6, 8, 12);
+            }
+        });
+
+        // Dibujar incidentes
+        Object.entries(estadoMapa.incidentes).forEach(([calle, incidente]) => {
+            if (calle.startsWith('V')) {
+                const calleIndex = parseInt(calle.substring(1));
+                const x = wVS * calleIndex;
+                const y = canvasHeight / 2;
+                
+                // Icono de incidente
+                ctx.fillStyle = '#FF6B35';
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Símbolo de advertencia
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('!', x, y + 4);
+                
+            } else if (calle.startsWith('H')) {
+                const calleIndex = parseInt(calle.substring(1));
+                const x = canvasWidth / 2;
+                const y = wHS * calleIndex;
+                
+                // Icono de incidente
+                ctx.fillStyle = '#FF6B35';
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Símbolo de advertencia
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('!', x, y + 4);
+            }
+        });
+
+        // Dibujar etiquetas de calles
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        
+        // Etiquetas verticales
+        for (let i = 1; i < numVertStreets; i++) {
+            const x = wVS * i;
+            ctx.fillText(`V${i}`, x, 15);
+        }
+        
+        // Etiquetas horizontales
+        for (let i = 1; i < numHorStreets; i++) {
+            const y = wHS * i;
+            ctx.fillText(`H${i}`, 15, y + 4);
+        }
     };
 
-    const abrirSegmento = () => {
-        setSegmentoCerrado(false);
-        segmentoCerradoRef.current = false;
+    // Función para resetear el mapa
+    const resetearMapa = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/mapa/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Mapa reseteado exitosamente');
+                    obtenerEstadoMapa();
+                }
+            }
+        } catch (err) {
+            console.error('Error reseteando mapa:', err);
+        }
     };
+
+    // Función para cerrar una calle específica
+    const cerrarCalle = async (calle) => {
+        try {
+            const response = await fetch('http://localhost:5000/api/mapa/cerrar-calle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ calle })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`Calle ${calle} cerrada`);
+                    obtenerEstadoMapa();
+                }
+            }
+        } catch (err) {
+            console.error('Error cerrando calle:', err);
+        }
+    };
+
+    // Función para abrir una calle específica
+    const abrirCalle = async (calle) => {
+        try {
+            const response = await fetch('http://localhost:5000/api/mapa/abrir-calle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ calle })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`Calle ${calle} abierta`);
+                    obtenerEstadoMapa();
+                }
+            }
+        } catch (err) {
+            console.error('Error abriendo calle:', err);
+        }
+    };
+
+    // Función para cambiar semáforo
+    const cambiarSemaforo = async (calle, estado) => {
+        try {
+            const response = await fetch('http://localhost:5000/api/mapa/semaforo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ calle, estado })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`Semáforo en ${calle} cambiado a ${estado}`);
+                    obtenerEstadoMapa();
+                }
+            }
+        } catch (err) {
+            console.error('Error cambiando semáforo:', err);
+        }
+    };
+
+    // Animación del canvas
+    useEffect(() => {
+        const canvas = mountRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        
+        const animate = () => {
+            dibujarMapa(ctx);
+            requestAnimationFrame(animate);
+        };
+        
+        animate();
+    }, [estadoMapa]);
 
     return (
-        <div>
-            <canvas ref={mountRef} width={500} height={400}></canvas>
-            <div style={{ marginTop: "10px" }}>
-                <button onClick={cerrarSegmento}>Cerrar Segmento</button>
-                <button onClick={abrirSegmento}>Abrir Segmento</button>
+        <div className="model-container">
+            <div className="map-header">
+                <h3>Mapa de la Ciudad - SpeakCity</h3>
+                {error && <div className="error-message">{error}</div>}
+            </div>
+            
+            <canvas 
+                ref={mountRef} 
+                width={canvasWidth} 
+                height={canvasHeight}
+                style={{ border: '2px solid #333', borderRadius: '8px' }}
+            />
+            
+            <div className="map-controls">
+                <div className="control-section">
+                    <h4>Controles de Calles:</h4>
+                    <div className="street-controls">
+                        {['V1', 'V2', 'V3', 'V4'].map(calle => (
+                            <div key={calle} className="street-control">
+                                <span>{calle}:</span>
+                                <button 
+                                    onClick={() => cerrarCalle(calle)}
+                                    className="btn-close"
+                                    disabled={estadoMapa.calles_cerradas.includes(calle)}
+                                >
+                                    Cerrar
+                                </button>
+                                <button 
+                                    onClick={() => abrirCalle(calle)}
+                                    className="btn-open"
+                                    disabled={!estadoMapa.calles_cerradas.includes(calle)}
+                                >
+                                    Abrir
+                                </button>
+                            </div>
+                        ))}
+                        {['H1', 'H2', 'H3'].map(calle => (
+                            <div key={calle} className="street-control">
+                                <span>{calle}:</span>
+                                <button 
+                                    onClick={() => cerrarCalle(calle)}
+                                    className="btn-close"
+                                    disabled={estadoMapa.calles_cerradas.includes(calle)}
+                                >
+                                    Cerrar
+                                </button>
+                                <button 
+                                    onClick={() => abrirCalle(calle)}
+                                    className="btn-open"
+                                    disabled={!estadoMapa.calles_cerradas.includes(calle)}
+                                >
+                                    Abrir
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="control-section">
+                    <h4>Controles de Semáforos:</h4>
+                    <div className="traffic-controls">
+                        {['V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3'].map(calle => (
+                            <div key={calle} className="traffic-control">
+                                <span>{calle}:</span>
+                                <button 
+                                    onClick={() => cambiarSemaforo(calle, 'verde')}
+                                    className="btn-green"
+                                >
+                                    Verde
+                                </button>
+                                <button 
+                                    onClick={() => cambiarSemaforo(calle, 'amarillo')}
+                                    className="btn-yellow"
+                                >
+                                    Amarillo
+                                </button>
+                                <button 
+                                    onClick={() => cambiarSemaforo(calle, 'rojo')}
+                                    className="btn-red"
+                                >
+                                    Rojo
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="control-section">
+                    <button onClick={resetearMapa} className="btn-reset">
+                        🔄 Resetear Mapa
+                    </button>
+                </div>
+            </div>
+            
+            <div className="map-legend">
+                <h4>Leyenda:</h4>
+                <div className="legend-items">
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#333333'}}></div>
+                        <span>Calle Abierta</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#FF0000'}}></div>
+                        <span>Calle Cerrada</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#00FF00'}}></div>
+                        <span>Semáforo Verde</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#FFFF00'}}></div>
+                        <span>Semáforo Amarillo</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#FF0000'}}></div>
+                        <span>Semáforo Rojo</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-color" style={{backgroundColor: '#FF6B35'}}></div>
+                        <span>Incidente</span>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-export default Model;
+export default Model; 
