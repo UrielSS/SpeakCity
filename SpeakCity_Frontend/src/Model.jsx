@@ -87,21 +87,21 @@ const Model = () => {
             ctx.lineTo(x, canvasHeight);
             ctx.stroke();
 
-            // Dibujar semáforo en la intersección
-            if (estadoMapa.semaforos[calle]) {
-                const estadoSemaforo = estadoMapa.semaforos[calle].estado;
-                const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
+            // // Dibujar semáforo en la intersección
+            // if (estadoMapa.semaforos[calle]) {
+            //     const estadoSemaforo = estadoMapa.semaforos[calle].estado;
+            //     const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
                 
-                ctx.fillStyle = colorSemaforo;
-                ctx.beginPath();
-                ctx.arc(x, 20, 8, 0, 2 * Math.PI);
-                ctx.fill();
+            //     ctx.fillStyle = colorSemaforo;
+            //     ctx.beginPath();
+            //     ctx.arc(x, 20, 8, 0, 2 * Math.PI);
+            //     ctx.fill();
                 
-                // Borde del semáforo
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
+            //     // Borde del semáforo
+            //     ctx.strokeStyle = '#000000';
+            //     ctx.lineWidth = 2;
+            //     ctx.stroke();
+            // }
         }
 
         // Dibujar calles horizontales
@@ -127,26 +127,28 @@ const Model = () => {
             ctx.lineTo(canvasWidth, y);
             ctx.stroke();
 
+            
+
             // Dibujar semáforo en la intersección
-            if (estadoMapa.semaforos[calle]) {
-                const estadoSemaforo = estadoMapa.semaforos[calle].estado;
-                const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
+            // if (estadoMapa.semaforos[calle]) {
+            //     const estadoSemaforo = estadoMapa.semaforos[calle].estado;
+            //     const colorSemaforo = coloresSemaforos[estadoSemaforo] || '#00FF00';
                 
-                ctx.fillStyle = colorSemaforo;
-                ctx.beginPath();
-                ctx.arc(20, y, 8, 0, 2 * Math.PI);
-                ctx.fill();
+            //     ctx.fillStyle = colorSemaforo;
+            //     ctx.beginPath();
+            //     ctx.arc(20, y, 8, 0, 2 * Math.PI);
+            //     ctx.fill();
                 
-                // Borde del semáforo
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
+            //     // Borde del semáforo
+            //     ctx.strokeStyle = '#000000';
+            //     ctx.lineWidth = 2;
+            //     ctx.stroke();
+            // }
         }
 
         // Dibujar vehículos
         estadoMapa.vehiculos.forEach(vehiculo => {
-            if (!vehiculo.activo) return;
+            //if (!vehiculo.activo) return;
 
             const calle = vehiculo.calle;
             const posicion = vehiculo.posicion;
@@ -158,7 +160,7 @@ const Model = () => {
                 const y = posicion;
                 
                 // Verificar si la calle está cerrada
-                if (estadoMapa.calles_cerradas.includes(calle)) return;
+                //if (estadoMapa.calles_cerradas.includes(calle)) return;
                 
                 // Dibujar vehículo
                 ctx.fillStyle = vehiculo.color;
@@ -176,7 +178,7 @@ const Model = () => {
                 const y = wHS * calleIndex;
                 
                 // Verificar si la calle está cerrada
-                if (estadoMapa.calles_cerradas.includes(calle)) return;
+                //if (estadoMapa.calles_cerradas.includes(calle)) return;
                 
                 // Dibujar vehículo
                 ctx.fillStyle = vehiculo.color;
@@ -189,48 +191,48 @@ const Model = () => {
             }
         });
 
-        // Dibujar incidentes
-        Object.entries(estadoMapa.incidentes).forEach(([calle, incidente]) => {
-            if (calle.startsWith('V')) {
-                const calleIndex = parseInt(calle.substring(1));
-                const x = wVS * calleIndex;
-                const y = canvasHeight / 2;
+        // // Dibujar incidentes
+        // Object.entries(estadoMapa.incidentes).forEach(([calle, incidente]) => {
+        //     if (calle.startsWith('V')) {
+        //         const calleIndex = parseInt(calle.substring(1));
+        //         const x = wVS * calleIndex;
+        //         const y = canvasHeight / 2;
                 
-                // Icono de incidente
-                ctx.fillStyle = '#FF6B35';
-                ctx.beginPath();
-                ctx.arc(x, y, 15, 0, 2 * Math.PI);
-                ctx.fill();
+        //         // Icono de incidente
+        //         ctx.fillStyle = '#FF6B35';
+        //         ctx.beginPath();
+        //         ctx.arc(x, y, 15, 0, 2 * Math.PI);
+        //         ctx.fill();
                 
-                // Símbolo de advertencia
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('!', x, y + 4);
+        //         // Símbolo de advertencia
+        //         ctx.fillStyle = '#FFFFFF';
+        //         ctx.font = 'bold 12px Arial';
+        //         ctx.textAlign = 'center';
+        //         ctx.fillText('!', x, y + 4);
                 
-            } else if (calle.startsWith('H')) {
-                const calleIndex = parseInt(calle.substring(1));
-                const x = canvasWidth / 2;
-                const y = wHS * calleIndex;
+        //     } else if (calle.startsWith('H')) {
+        //         const calleIndex = parseInt(calle.substring(1));
+        //         const x = canvasWidth / 2;
+        //         const y = wHS * calleIndex;
                 
-                // Icono de incidente
-                ctx.fillStyle = '#FF6B35';
-                ctx.beginPath();
-                ctx.arc(x, y, 15, 0, 2 * Math.PI);
-                ctx.fill();
+        //         // Icono de incidente
+        //         ctx.fillStyle = '#FF6B35';
+        //         ctx.beginPath();
+        //         ctx.arc(x, y, 15, 0, 2 * Math.PI);
+        //         ctx.fill();
                 
-                // Símbolo de advertencia
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('!', x, y + 4);
-            }
-        });
+        //         // Símbolo de advertencia
+        //         ctx.fillStyle = '#FFFFFF';
+        //         ctx.font = 'bold 12px Arial';
+        //         ctx.textAlign = 'center';
+        //         ctx.fillText('!', x, y + 4);
+        //     }
+        // });
 
         // Dibujar etiquetas de calles
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = '#F00000';
+        ctx.font = 'bold 25px Arial';
+        ctx.textAlign = 'left';
         
         // Etiquetas verticales
         for (let i = 1; i < numVertStreets; i++) {
@@ -369,7 +371,7 @@ const Model = () => {
                 <div className="control-section">
                     <h4>Controles de Calles:</h4>
                     <div className="street-controls">
-                        {['V1', 'V2', 'V3', 'V4'].map(calle => (
+                        {['V1', 'V2', 'V3'].map(calle => (
                             <div key={calle} className="street-control">
                                 <span>{calle}:</span>
                                 <button 
@@ -388,7 +390,7 @@ const Model = () => {
                                 </button>
                             </div>
                         ))}
-                        {['H1', 'H2', 'H3'].map(calle => (
+                        {['H1', 'H2'].map(calle => (
                             <div key={calle} className="street-control">
                                 <span>{calle}:</span>
                                 <button 
@@ -404,35 +406,6 @@ const Model = () => {
                                     disabled={!estadoMapa.calles_cerradas.includes(calle)}
                                 >
                                     Abrir
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                
-                <div className="control-section">
-                    <h4>Controles de Semáforos:</h4>
-                    <div className="traffic-controls">
-                        {['V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3'].map(calle => (
-                            <div key={calle} className="traffic-control">
-                                <span>{calle}:</span>
-                                <button 
-                                    onClick={() => cambiarSemaforo(calle, 'verde')}
-                                    className="btn-green"
-                                >
-                                    Verde
-                                </button>
-                                <button 
-                                    onClick={() => cambiarSemaforo(calle, 'amarillo')}
-                                    className="btn-yellow"
-                                >
-                                    Amarillo
-                                </button>
-                                <button 
-                                    onClick={() => cambiarSemaforo(calle, 'rojo')}
-                                    className="btn-red"
-                                >
-                                    Rojo
                                 </button>
                             </div>
                         ))}
@@ -457,22 +430,10 @@ const Model = () => {
                         <div className="legend-color" style={{backgroundColor: '#FF0000'}}></div>
                         <span>Calle Cerrada</span>
                     </div>
-                    <div className="legend-item">
-                        <div className="legend-color" style={{backgroundColor: '#00FF00'}}></div>
-                        <span>Semáforo Verde</span>
-                    </div>
-                    <div className="legend-item">
-                        <div className="legend-color" style={{backgroundColor: '#FFFF00'}}></div>
-                        <span>Semáforo Amarillo</span>
-                    </div>
-                    <div className="legend-item">
-                        <div className="legend-color" style={{backgroundColor: '#FF0000'}}></div>
-                        <span>Semáforo Rojo</span>
-                    </div>
-                    <div className="legend-item">
+                    {/* <div className="legend-item">
                         <div className="legend-color" style={{backgroundColor: '#FF6B35'}}></div>
                         <span>Incidente</span>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>

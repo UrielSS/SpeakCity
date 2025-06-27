@@ -21,13 +21,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configuración de CORS más específica
-CORS(app, origins=[
-    "http://localhost:5173",
-    "http://localhost:5174", 
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174"
-])
+# Configuración de CORS
+CORS(app)
 
 # Verificar API key
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
@@ -96,7 +91,8 @@ def es_comando_trafico_valido(mensaje: str) -> bool:
     palabras_trafico = [
         'semaforo', 'trafico', 'calle', 'avenida', 'carril', 'congestion',
         'accidente', 'velocidad', 'flujo', 'interseccion', 'via', 'ruta',
-        'bloqueo', 'emergencia', 'construccion', 'mantenimiento'
+        'bloqueo', 'emergencia', 'construccion', 'mantenimiento', 'abrir', 
+        'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque', 
     ]
     
     mensaje_lower = mensaje.lower()
@@ -106,9 +102,7 @@ def sanitizar_entrada(mensaje: str) -> str:
     """Sanitiza la entrada del usuario"""
     # Remover caracteres potencialmente peligrosos
     mensaje = re.sub(r'[<>"\';{}()=]', '', mensaje)
-    # Limitar longitud
     mensaje = mensaje[:500]
-    # Remover espacios extra
     mensaje = ' '.join(mensaje.split())
     return mensaje
 
@@ -132,7 +126,7 @@ COMANDOS VÁLIDOS:
 CAUSAS VÁLIDAS:
 congestion, accidente, construccion, evento_especial, clima_adverso, mantenimiento, emergencia, hora_pico, bloqueo_temporal, optimizacion_flujo
 
-CALLLES PERMITIDAS: V1–V4 (verticales), H1–H3 (horizontales)
+CALLLES PERMITIDAS: V1–V3 (verticales), H1–H2 (horizontales)
 
 INSTRUCCIONES:
 - Si el comando NO está relacionado con tráfico, responde con accion: "comando_invalido"
@@ -202,13 +196,13 @@ class EstadoMapa:
         self.vehiculos = []
         
         # Vehículos en calles verticales
-        for i, calle in enumerate(['V1', 'V2', 'V3', 'V4']):
-            for j in range(3):  # 3 vehículos por calle
+        for i, calle in enumerate(['V1', 'V2', 'V3']):
+            for j in range(1):  # 3 vehículos por calle
                 self.vehiculos.append({
                     'id': f'v_{calle}_{j}',
                     'tipo': 'auto',
                     'calle': calle,
-                    'posicion': random.uniform(0, 400),  # Posición Y
+                    'posicion': random.uniform(0, 0),  # Posición Y
                     'velocidad': random.uniform(0.5, 2.0),
                     'direccion': 'sur',  # Verticales van de norte a sur
                     'color': self.get_color_vehiculo(),
@@ -216,16 +210,17 @@ class EstadoMapa:
                 })
         
         # Vehículos en calles horizontales
-        for i, calle in enumerate(['H1', 'H2', 'H3']):
-            for j in range(2):  # 2 vehículos por calle horizontal
+        for i, calle in enumerate(['H1', 'H2']):
+            for j in range(1):  # 2 vehículos por calle horizontal
                 self.vehiculos.append({
                     'id': f'h_{calle}_{j}',
                     'tipo': 'auto',
                     'calle': calle,
-                    'posicion': random.uniform(0, 500),  # Posición X
+                    'posicion': random.uniform(0, 0),  # Posición X
                     'velocidad': random.uniform(0.5, 2.0),
                     'direccion': 'este',  # Horizontales van de oeste a este
                     'color': self.get_color_vehiculo(),
+                    'movimiento': True,
                     'activo': True
                 })
     
@@ -261,24 +256,42 @@ class EstadoMapa:
     
     def actualizar_vehiculos(self):
         """Actualiza las posiciones de los vehículos"""
+        # Definir posiciones de intersección para cada calle
+        intersecciones = {
+            # H1 cruza V1, V2, V3
+            'H1': {'V1': 120, 'V2': 245, 'V3': 370},
+            # H2 cruza V1, V2, V3
+            'H2': {'V1': 120, 'V2': 245, 'V3': 370},
+            # V1 cruza H1, H2
+            'V1': {'H1': 128, 'H2': 261},
+            'V2': {'H1': 128, 'H2': 261},
+            'V3': {'H1': 128, 'H2': 261},
+        }
+        
         with self.lock:
             for vehiculo in self.vehiculos:
                 if not vehiculo['activo']:
                     continue
                 
-                # Verificar si la calle está cerrada
-                if vehiculo['calle'] in self.calles_cerradas:
-                    continue
-                
-                # Actualizar posición según dirección
-                if vehiculo['direccion'] == 'sur':  # Calles verticales
+                #Revisa si las intersecciones con las calles están cerradas
+                for calle_cerrada in self.calles_cerradas:
+                    if calle_cerrada in intersecciones[vehiculo['calle']]: # Si la calle cerrada está en las intersecciones de la calle del vehículo
+                        pos_inter = intersecciones[vehiculo['calle']][calle_cerrada] # Obtiene posición de intersección
+                        if vehiculo['movimiento']:
+                            # Si está antes o después de la intersección con calle cerrada, avanza
+                            if vehiculo['posicion'] + vehiculo['velocidad'] < pos_inter -5 or vehiculo['posicion'] + vehiculo['velocidad'] > pos_inter + 5:
+                                vehiculo['posicion'] += vehiculo['velocidad']
+                            else:
+                                vehiculo['posicion'] = pos_inter - 5  # Se detiene justo antes
+                                vehiculo['movimiento'] = False # Desactiva bandera de movimiento
+                else: # Si no hay intersección cerrada, avanza normal
+                    vehiculo['movimiento'] = True #Activa bandera de movimiento
                     vehiculo['posicion'] += vehiculo['velocidad']
-                    if vehiculo['posicion'] > 400:
-                        vehiculo['posicion'] = 0
-                elif vehiculo['direccion'] == 'este':  # Calles horizontales
-                    vehiculo['posicion'] += vehiculo['velocidad']
-                    if vehiculo['posicion'] > 500:
-                        vehiculo['posicion'] = 0
+                    # Reinicio de movimiento del coche
+                    if vehiculo['direccion'] == 'este' and vehiculo['posicion'] > 500:
+                            vehiculo['posicion'] = 0
+                    elif vehiculo['direccion'] == 'sur' and vehiculo['posicion'] > 400:
+                            vehiculo['posicion'] = 0
     
     def get_estado(self):
         """Retorna el estado completo del mapa"""

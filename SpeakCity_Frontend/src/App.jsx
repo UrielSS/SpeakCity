@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import ChatBox from './ChatBox'
 import Model from './Model'
@@ -14,7 +12,7 @@ function App() {
       {/* Header principal */}
       <header className="app-header">
         <h1 className="app-title">SpeakCity</h1>
-        <p className="app-subtitle">Hablando con la ciudad</p>
+        <p className="app-subtitle">Una ciudad con la que puedes hablar</p>
       </header>
 
       {/* Contenido principal */}

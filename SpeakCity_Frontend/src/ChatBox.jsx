@@ -162,10 +162,9 @@ function ChatBox() {
 
   // Lista de ejemplos
   const examples = [
-    "cambiar semáforo en V1 por congestión",
-    "cerrar carril en H2 por mantenimiento",
-    "reportar accidente en V3",
-    "activar emergencia en H1"
+    "Cierra la calle H2 por mantenimiento",
+    "Acaba de haber un choque en la calle V1, bloque el paso",
+    "La calle V3 se acaba de inundar"
   ];
 
   return (
@@ -188,7 +187,7 @@ function ChatBox() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ejemplo: cambiar semáforo en V1 por congestión... (Presiona Enter para enviar)"
+            placeholder="Ejemplo: cierra la calle V1 por congestión... (Presiona Enter para enviar)"
             className="chat-input"
             rows="3"
             disabled={loading || backendStatus === 'error'}
@@ -224,7 +223,7 @@ function ChatBox() {
              <p><strong>Calle:</strong> {response.calle}</p>
              <p><strong>Causa:</strong> {response.causa}</p>
              <p><strong>Prioridad:</strong> {response.prioridad}</p>
-             <p><strong>Duración estimada:</strong> {response.duracion_estimada || 'No especificada'} minutos</p>
+             <p><strong>Duración estimada:</strong> {response.duracion_estimada || 'No especificada'} en minutos</p>
           </div>
         </div>
       )}
