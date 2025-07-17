@@ -47,7 +47,7 @@ CAUSAS_VALIDAS = [
     'mantenimiento', 'emergencia', 'hora_pico', 'bloqueo_temporal', 'optimizacion_flujo'
 ]
 
-CALLES_VALIDAS = [f'V{i}' for i in range(1, 5)] + [f'H{i}' for i in range(1, 4)]
+CALLES_VALIDAS = [f'V{i}' for i in range(1, 4)] + [f'H{i}' for i in range(1, 3)]
 
 class ComandoTrafico(BaseModel):
     accion: str = Field(..., description="Acción específica a realizar en el sistema de tráfico")
@@ -298,10 +298,14 @@ class EstadoMapa:
         with self.lock:
             return {
                 'calles_cerradas': list(self.calles_cerradas),
+                'calles_abiertas': self.get_calles_abiertas(),
                 'semaforos': self.semaforos_estado,
                 'vehiculos': self.vehiculos,
                 'incidentes': self.incidentes
             }
+
+    def get_calles_abiertas(self) -> int:
+        return len(CALLES_VALIDAS) - len(self.calles_cerradas)
 
 # Instancia global del estado del mapa
 estado_mapa = EstadoMapa()

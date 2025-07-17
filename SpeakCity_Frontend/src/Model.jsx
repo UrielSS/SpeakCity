@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import './Model.css';
 
-const Model = () => {
+const Model = ({ setNumCarros, setCallesAbiertas, setCallesCerradas }) => {
     const mountRef = useRef(null);
     const [estadoMapa, setEstadoMapa] = useState({
         calles_cerradas: [],
@@ -39,6 +39,10 @@ const Model = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    console.log(data.estado);
+                    setNumCarros(prev => data.estado.vehiculos.length);
+                    setCallesCerradas(prev => data.estado.calles_cerradas.length);
+                    setCallesAbiertas(prev => data.estado.calles_abiertas);
                     setEstadoMapa(data.estado);
                     setError(null);
                 }
