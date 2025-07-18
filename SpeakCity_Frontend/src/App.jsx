@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import ChatBox from './ChatBox'
-import Model from './components/Model'
+import { useState, useEffect } from 'react';
+//import reactLogo from './assets/react.svg';
+//import viteLogo from '/vite.svg';
+import './App.css';
+import ChatBox from './ChatBox';
+import CityCanvas from './CityCanvas'; // Importa el nuevo componente
 
 function App() {
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState([]);
 
   useEffect(()=>{
     fetch('http://localhost:5000/api/users')
@@ -16,6 +16,7 @@ function App() {
 
   return (
     <>
+    {/* Agrega el nuevo componente aquí 
       <div>
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
@@ -24,12 +25,16 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-
-       <h1>SpeakCity - IA Chat</h1>
-      <div> 
-        <Model />
-      </div>
+*/}
+      <h1>SpeakCity - IA Chat</h1>
+{/*
       <ChatBox />
+*/}     
+      {/* Agrega el nuevo componente aquí */}
+      <div style={{ margin: '20px 0' }}>
+        <CityCanvas />
+      </div>
+      
       <div className="card">
         <h2>
           <ul>
@@ -48,4 +53,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
