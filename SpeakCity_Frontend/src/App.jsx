@@ -1,56 +1,63 @@
-import { useState, useEffect } from 'react';
-//import reactLogo from './assets/react.svg';
-//import viteLogo from '/vite.svg';
-import './App.css';
-import ChatBox from './ChatBox';
-import CityCanvas from './CityCanvas'; // Importa el nuevo componente
+import { useState, useEffect } from 'react'
+import './App.css'
+import ChatBox from './ChatBox'
+import Dashboard from './Dashboard'
+import Model from './Model'
+import TrafficSimulation from './TrafficSimulation';
 
 function App() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(()=>{
-    fetch('http://localhost:5000/api/users')
-    .then(res => res.json())
-    .then(data =>setUsers(data.users))
-  }, []);
+  const [users, setUsers] = useState([])
+  const [numCarros, setNumCarros] = useState(0)
+  const [callesAbiertas, setCallesAbiertas] = useState(0)
+  const [callesCerradas, setCallesCerradas] = useState(0)
 
   return (
-    <>
-    {/* Agrega el nuevo componente aquí 
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-*/}
-      <h1>SpeakCity - IA Chat</h1>
-{/*
-      <ChatBox />
-*/}     
-      {/* Agrega el nuevo componente aquí */}
-      <div style={{ margin: '20px 0' }}>
-        <CityCanvas />
-      </div>
-      
-      <div className="card">
-        <h2>
-          <ul>
-            {users.map((user)=>(
-              <li key={user.id}>
-                {user.name}
-              </li>
-            ))}
-          </ul>
-        </h2>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-    </>
-  )
+    <div className="app-container">
+     
+      {/* Header principal */}
+      <header className="app-header">
+        <h1 className="app-title">SpeakCity</h1>
+        <p className="app-subtitle">Una ciudad con la que puedes hablar</p>
+      </header>
+
+      {/* Contenido principal */}
+      <main className="main-content">
+
+        {/* Dashboard principal */}
+        <Dashboard
+          numCarros={numCarros}
+          callesAbiertas={callesAbiertas}
+          callesCerradas={callesCerradas}
+        />
+
+        {/* Layout de chat y mapa */}
+        <div className="app-layout">
+          {/* Sección del chat */}
+          <section className="chat-section">
+            <ChatBox />
+          </section>
+
+          {/* Sección del mapa */}
+          <section className="map-section">
+            <div className="map-placeholder">
+              <h3>Mapa de la Ciudad</h3>
+              <Model
+                setNumCarros={setNumCarros}
+                setCallesAbiertas={setCallesAbiertas}
+                setCallesCerradas={setCallesCerradas}
+              />
+            </div>
+          </section>
+        </div>
+
+        {/* Mapa 2 */}
+        <div className="app-container">
+          <h1>Simulación de Tráfico</h1>
+          <TrafficSimulation />
+        </div>
+      </main>
+    </div>
+  );
 }
 
-export default App;
+export default App
