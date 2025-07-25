@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 
 const TrafficSimulation = () => {
-  const canvasWidth = 800;
-  const canvasHeight = 600;
+  const canvasWidth = 700;
+  const canvasHeight = 500;
   const hortBlocks = 4;
   const vertBlocks = 4;
   const wVS = Math.floor(canvasWidth / vertBlocks);

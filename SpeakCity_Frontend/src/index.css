@@ -102,7 +102,7 @@ h1 {
     width: 0;
   }
   to {
-    width: 100%;
+    width: 7ch; /* Ajusta a la longitud del texto */
   }
 }
 
@@ -224,8 +224,8 @@ button:focus {
   
   h1 {
     font-size: 2.5rem;
-    animation: typewriterMobile 2.5s steps(9) 1s 1 normal both,
-               blink 1s steps(1) infinite;
+    animation: typewriter 1s steps(9) 1s 1 normal both,
+             blink .5s steps(1) infinite;
   }
   
   @keyframes typewriterMobile {
@@ -249,8 +249,8 @@ button:focus {
 @media (max-width: 480px) {
   h1 {
     font-size: 2rem;
-    animation: typewriterSmall 2s steps(9) 1s 1 normal both,
-               blink 1s steps(1) infinite;
+    animation: typewriterSmall 1s steps(9) 1s 1 normal both,
+               blink .5s steps(1) infinite;
   }
   
   @keyframes typewriterSmall {
@@ -258,7 +258,7 @@ button:focus {
       width: 0;
     }
     to {
-      width: 100%;
+      width: 7ch;
     }
   }
   
