@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { TrafficContext } from './TrafficContext';
 import './ChatBox.css';
+
 
 function ChatBox() {
   const [message, setMessage] = useState('');
@@ -7,6 +9,7 @@ function ChatBox() {
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [error, setError] = useState('');
+  const { closeStreet, openStreet } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
   useEffect(() => {
@@ -47,6 +50,13 @@ function ChatBox() {
       
       const data = await res.json();
       console.log(data);
+
+      if (data['response']['accion'] == 'cerrar_carril') {
+        closeStreet(data['response']['calle']);
+      } else if (data['response']['accion'] == 'abrir_carril') {
+        openStreet(data['response']['calle']);
+      }
+        
       
       if (data.success) {
         setResponse(data.response);

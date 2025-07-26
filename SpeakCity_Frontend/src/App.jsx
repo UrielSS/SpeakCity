@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 import ChatBox from './ChatBox'
+import { TrafficContext } from './TrafficContext';
 import Dashboard from './Dashboard'
 import Model from './Model'
 import TrafficSimulation from './TrafficSimulation';
@@ -11,6 +12,7 @@ function App() {
   // const [numCarros, setNumCarros] = useState(0)
   // const [callesAbiertas, setCallesAbiertas] = useState(0)
   // const [callesCerradas, setCallesCerradas] = useState(0)
+  const [trafficAPI, setTrafficAPI] = React.useState({});
 
   return (
     <div className="app-container">
@@ -49,6 +51,7 @@ function App() {
 
         {/* Layout de chat y mapa */}
         <div className="app-layout">
+          <TrafficContext.Provider value={trafficAPI}>
           {/* Sección del chat */}
           <section className="chat-section">
             <ChatBox />
@@ -58,9 +61,11 @@ function App() {
           <section className="map-section">
             <div className="map-placeholder">
               <h3>Mapa de la Ciudad</h3>
-              <TrafficSimulation />
+                <TrafficSimulation setTrafficAPI={setTrafficAPI} />
+              {/*<TrafficSimulation />*/}
             </div>
           </section>
+          </TrafficContext.Provider>
         </div>
       </main>
     </div>

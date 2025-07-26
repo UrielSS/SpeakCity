@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 
-const TrafficSimulation = () => {
+const TrafficSimulation = ({ setTrafficAPI }) => {
   const canvasWidth = 700;
   const canvasHeight = 500;
   const hortBlocks = 4;
@@ -9,6 +9,15 @@ const TrafficSimulation = () => {
   const wVS = Math.floor(canvasWidth / vertBlocks);
   const wHS = Math.floor(canvasHeight / hortBlocks);
   const halfWidthStreets = 15;
+
+
+  const pixiContainerRef = useRef(null);
+  const appRef = useRef(null);
+  const carsRef = useRef([]);
+  const allStreetsRef = useRef(new Map());
+  const allIntersectionsRef = useRef(new Map());
+  const closedStreetsRef = useRef(new Map());
+
 
   // Clase para representar un carro
   class Car extends PIXI.Sprite {
@@ -220,7 +229,9 @@ const TrafficSimulation = () => {
     }
   };
 
-  const closeStreet = async (nameStreet = "H10", allStreets, closedStreets) => {
+  
+
+  const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
     if (!streetToClose || closedStreets.has(nameStreet)) return;
 
@@ -228,11 +239,11 @@ const TrafficSimulation = () => {
     closedStreets.set(nameStreet, true);
     console.log(`Calle ${nameStreet} cerrada.`);
 
-    await sleep(8000);
-    openStreet(nameStreet, allStreets, closedStreets);
+    // await sleep(8000);
+    // openStreet(nameStreet, allStreets, closedStreets);
   };
 
-  const openStreet = (nameStreet = "H10", allStreets, closedStreets) => {
+  const openStreet = (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     if (closedStreets.has(nameStreet)) {
       const streetToOpen = allStreets.get(nameStreet);
       if (streetToOpen) {
@@ -265,56 +276,10 @@ const TrafficSimulation = () => {
     await PIXI.Assets.load(assets);
   };
 
-  const pixiContainerRef = useRef(null);
-  const appRef = useRef(null);
-  const carsRef = useRef([]);
-  const allStreetsRef = useRef(new Map());
-  const allIntersectionsRef = useRef(new Map());
-  const closedStreetsRef = useRef(new Map());
-
-  useEffect(() => {
-    const initPixiApp = async () => {
-      await preloadElements();
-      
-      const app = new PIXI.Application({
-        width: canvasWidth,
-        height: canvasHeight,
-        backgroundColor: 0x1099bb
-      });
-      
-      pixiContainerRef.current.appendChild(app.view);
-      appRef.current = app;
-
-      const backgroundTexture = PIXI.Texture.from('grass_bg');
-      const background = new PIXI.Sprite(backgroundTexture);
-      background.width = app.screen.width;
-      background.height = app.screen.height;
-      app.stage.addChildAt(background, 0);
-
-      const blockContainer = new PIXI.Container();
-      const streetContainer = new PIXI.Container();
-      const intersectionContainer = new PIXI.Container();
-      const carsContainer = new PIXI.Container();
-      app.stage.addChild(blockContainer);
-      app.stage.addChild(streetContainer);
-      app.stage.addChild(intersectionContainer);
-      app.stage.addChild(carsContainer);
-
-    };
-
-    initPixiApp();
-
-    return () => {
-      if (appRef.current) {
-        appRef.current.destroy(true);
-      }
-    };
-  }, []);
-
   useEffect(() => {
     const initPixiApp = async () => {
         await preloadElements();
-        
+
         const app = new PIXI.Application();
         await app.init({
         width: canvasWidth,
@@ -427,7 +392,8 @@ const TrafficSimulation = () => {
       carsRef.current = cars;
 
       // Cerrar una calle para probar
-      closeStreet("V21", allStreetsRef.current, closedStreetsRef.current);
+      console.log(allStreetsRef);
+      // closeStreet("V21", allStreetsRef.current, closedStreetsRef.current);
 
       // Configurar el game loop
       app.ticker.add((time) => {
@@ -588,6 +554,9 @@ const TrafficSimulation = () => {
     };
 
     initPixiApp();
+
+    
+    setTrafficAPI({ closeStreet, openStreet });
 
     return () => {
         if (appRef.current) {
