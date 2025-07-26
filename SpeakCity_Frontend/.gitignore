@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Archivos a ignorar
+**/venv/
+**/node_modules/
+/SpeakCity_Backend/.env

@@ -3,34 +3,49 @@ import './App.css'
 import ChatBox from './ChatBox'
 import Dashboard from './Dashboard'
 import Model from './Model'
+import TrafficSimulation from './TrafficSimulation';
 
 function App() {
   const [users, setUsers] = useState([])
-  const [numCarros, setNumCarros] = useState(0)
-  const [callesAbiertas, setCallesAbiertas] = useState(0)
-  const [callesCerradas, setCallesCerradas] = useState(0)
+  const [showModal, setShowModal] = useState(false);
+  // const [numCarros, setNumCarros] = useState(0)
+  // const [callesAbiertas, setCallesAbiertas] = useState(0)
+  // const [callesCerradas, setCallesCerradas] = useState(0)
 
   return (
     <div className="app-container">
      
       {/* Header principal */}
       <header className="app-header">
+        <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
         <h1 className="app-title">SpeakCity</h1>
-        <p className="app-subtitle">Una ciudad con la que puedes hablar</p>
+        <button className="about-button" onClick={() => setShowModal(true)}>
+          Acerca de
+        </button>
       </header>
+
+      {/* Modal de información */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Acerca de Nosotros</h2>
+            <p>
+              
+            </p>
+            <button onClick={() => setShowModal(false)}>Cerrar</button>
+          </div>
+        </div>
+      )}
 
       {/* Contenido principal */}
       <main className="main-content">
 
         {/* Dashboard principal */}
-        <Dashboard
+        {/* <Dashboard
           numCarros={numCarros}
           callesAbiertas={callesAbiertas}
           callesCerradas={callesCerradas}
-        />
-
-
-
+        /> */}
 
         {/* Layout de chat y mapa */}
         <div className="app-layout">
@@ -43,17 +58,13 @@ function App() {
           <section className="map-section">
             <div className="map-placeholder">
               <h3>Mapa de la Ciudad</h3>
-              <Model
-                setNumCarros={setNumCarros}
-                setCallesAbiertas={setCallesAbiertas}
-                setCallesCerradas={setCallesCerradas}
-              />
+              <TrafficSimulation />
             </div>
           </section>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 export default App

@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "pixi.js": "^8.11.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

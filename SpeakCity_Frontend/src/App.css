@@ -27,61 +27,139 @@
 
 /* Header principal */
 .app-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  position: relative;
-  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(0, 33, 87, 0.158);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2rem; /* Espaciado lateral */
+  z-index: 1000;
+  animation: slideDown 0.6s ease-in-out;
 }
 
 .app-title {
-  font-size: 4rem;
+  font-size: 1.8rem;
   font-weight: 600;
-  margin-bottom: 1rem;
   position: relative;
   display: inline-block;
+  color: #000;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: -0.02em;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  margin: 0;
+}
+
+.app-title::before,
+.app-title::after {
+  font-size: 1.2rem;
+  color: #fff;
+  opacity: 0.7;
 }
 
 .app-title::before {
-  position: absolute;
-  left: -60px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 3rem;
-  animation: cityPulse 3s ease-in-out infinite;
+  left: -30px;
 }
 
 .app-title::after {
-  position: absolute;
-  right: -60px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 3rem;
-  animation: cityPulse 3s ease-in-out infinite 1.5s;
+  right: -30px;
 }
 
-@keyframes cityPulse {
-  0%, 100% { 
-    transform: translateY(-50%) scale(1) rotate(0deg); 
-  }
-  50% { 
-    transform: translateY(-50%) scale(1.1) rotate(5deg); 
-  }
+/* Logo pequeño */
+.logo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+   margin-right: 5px;
 }
-
 .app-subtitle {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  margin-bottom: 2rem;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  display: none; /* Ya no hay subtítulo */
 }
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+.about-button {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background: #3e6792;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.about-button:hover {
+  background: #0056b3;
+}
+
+/* Fondo oscuro del modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Contenido del popup*/
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal h2 {
+  margin-top: 0;
+}
+
+.modal button {
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 
 /* Contenedor principal del contenido */
 .main-content {
@@ -113,7 +191,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 600px;
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: var(--border-radius-lg);
@@ -246,13 +324,6 @@
   border-left: 6px solid #f44336;
 }
 
-
-
-@keyframes mapFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(5deg); }
-}
-
 /* Responsive design */
 @media (max-width: 1024px) {
   .app-layout {
@@ -279,10 +350,6 @@
     display: none;
   }
   
-  .app-subtitle {
-    font-size: 1rem;
-  }
-  
   .main-content {
     gap: 2rem;
   }
@@ -303,19 +370,11 @@
   .map-icon {
     font-size: 3rem;
   }
-  
-  .users-section {
-    padding: 1.5rem;
-  }
 }
 
 @media (max-width: 480px) {
   .app-title {
     font-size: 2rem;
-  }
-  
-  .app-subtitle {
-    font-size: 0.9rem;
   }
   
   .map-section {
@@ -333,14 +392,5 @@
   
   .map-icon {
     font-size: 2.5rem;
-  }
-  
-  .users-section {
-    padding: 1rem;
-  }
-  
-  .users-list li {
-    padding: 0.8rem;
-    font-size: 0.9rem;
   }
 }
