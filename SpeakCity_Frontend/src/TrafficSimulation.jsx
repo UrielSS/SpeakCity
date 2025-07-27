@@ -10,6 +10,7 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
   const wHS = Math.floor(canvasHeight / hortBlocks);
   const halfWidthStreets = 15;
 
+  let nextCarID = 0;
 
   const pixiContainerRef = useRef(null);
   const appRef = useRef(null);
@@ -23,7 +24,8 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
   class Car extends PIXI.Sprite {
     constructor(texture, isVertical, initialPosition, direction, speed) {
       super(texture);
-
+      
+      this.id = nextCarID ++;
       this.isVertical = isVertical;
       this.direction = direction;
       this.speed = speed;
@@ -229,8 +231,6 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
     }
   };
 
-  
-
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
     if (!streetToClose || closedStreets.has(nameStreet)) return;
@@ -276,41 +276,68 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
     await PIXI.Assets.load(assets);
   };
 
+  const setNameStreets = (allStreets, container) => {
+    console.log(allStreets);
+        allStreets.forEach((value, key) => {
+            console.log(`${key}: ${value.dimensions}`);
+            const html = new PIXI.HTMLText({
+                text: `${key}`,
+                style: {
+                    fontFamily: 'Arial',
+                    fontSize: 15,
+                    fill: '#ffffffff',
+                    align: 'center',
+                },
+            });
+            //console.log(value.orientation)
+            if (value.orientation == "vertical"){
+              html.x = value.dimensions[0];
+              html.y = value.dimensions[1] + value.dimensions[3] / 2;
+            } else {
+              html.x = value.dimensions[0] + value.dimensions[2] / 2;
+              html.y = value.dimensions[1];
+            }
+            container.addChild(html);
+        });
+  }
+
   useEffect(() => {
     const initPixiApp = async () => {
-        await preloadElements();
+      await preloadElements();
 
-        const app = new PIXI.Application();
-        await app.init({
-        width: canvasWidth,
-        height: canvasHeight,
-        backgroundColor: 0x1099bb,
-        antialias: true // Opcional para mejor renderizado
-        });
-        
-        pixiContainerRef.current.appendChild(app.canvas);
-        appRef.current = app;
+      const app = new PIXI.Application();
+      await app.init({
+      width: canvasWidth,
+      height: canvasHeight,
+      backgroundColor: 0x1099bb,
+      antialias: true // Opcional para mejor renderizado
+      });
+      
+      pixiContainerRef.current.appendChild(app.canvas);
+      appRef.current = app;
 
-        // Resto de tu código de inicialización...
-        const backgroundTexture = PIXI.Texture.from('grass_bg');
-        const background = new PIXI.Sprite(backgroundTexture);
-        background.width = app.screen.width;
-        background.height = app.screen.height;
-        app.stage.addChildAt(background, 0);
+      // Resto de tu código de inicialización...
+      const backgroundTexture = PIXI.Texture.from('grass_bg');
+      const background = new PIXI.Sprite(backgroundTexture);
+      background.width = app.screen.width;
+      background.height = app.screen.height;
+      app.stage.addChildAt(background, 0);
 
-        const blockContainer = new PIXI.Container();
-        const streetContainer = new PIXI.Container();
-        const intersectionContainer = new PIXI.Container();
-        const carsContainer = new PIXI.Container();
-        
-        app.stage.addChild(blockContainer);
-        app.stage.addChild(streetContainer);
-        app.stage.addChild(intersectionContainer);
-        app.stage.addChild(carsContainer);
+      const blockContainer = new PIXI.Container();
+      const streetContainer = new PIXI.Container();
+      const intersectionContainer = new PIXI.Container();
+      const carsContainer = new PIXI.Container();
+      const labelContainer = new PIXI.Container();
 
-        
+      app.stage.addChild(blockContainer);
+      app.stage.addChild(streetContainer);
+      app.stage.addChild(intersectionContainer);
+      app.stage.addChild(carsContainer);
+      app.stage.addChild(labelContainer);
+
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
+      setNameStreets(allStreetsRef.current,labelContainer);
 
       // Asignar calles conectadas a las intersecciones
       for (let i = 1; i < hortBlocks; i++) {
@@ -474,8 +501,14 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
                 const carBBounds = carB.getBounds();
 
                 if (areRectanglesIntersecting(carBBounds, intersectionBounds)) {
-                  if (!carB.isStopped) {
-                    shouldCarAStop = true;
+                    //console.log(carA.id +" " +carB.id)
+                  if (areRectanglesIntersecting(carAFrontSensor, intersectionBounds)){
+                    if (carB.id < carA.id)
+                      shouldCarAStop = true;
+                  } else {
+                    if (!carB.isStopped ) {
+                      shouldCarAStop = true;
+                    }
                   }
                   break;
                 }

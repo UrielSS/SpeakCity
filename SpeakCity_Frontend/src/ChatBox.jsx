@@ -173,9 +173,9 @@ function ChatBox() {
 
   // Lista de ejemplos
   const examples = [
-    "Cierra la calle H2 por mantenimiento",
-    "Acaba de haber un choque en la calle V1, bloque el paso",
-    "La calle V3 se acaba de inundar"
+    "Cierra la calle H20 por mantenimiento",
+    "Acaba de haber un choque en la calle V11, bloque el paso",
+    "La calle V32 se acaba de inundar"
   ];
 
   return (
