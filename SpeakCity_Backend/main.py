@@ -36,7 +36,7 @@ else:
 # Definición de acciones, causas y calles válidas (Diccionarios)
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo', 'activar_semaforo', 'desactivar_semaforo', 'programar_semaforo'],
-    'flujo': ['abrir_carril', 'cerrar_carril', 'redirigir_trafico', 'controlar_flujo'],
+    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
     'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia']
@@ -119,10 +119,9 @@ CONTEXTO ESPECÍFICO:
 
 COMANDOS VÁLIDOS:
 1. SEMÁFOROS: cambiar_semaforo, activar_semaforo, desactivar_semaforo, programar_semaforo
-2. FLUJO: abrir_carril, cerrar_carril, redirigir_trafico, controlar_flujo  
-3. INCIDENTES: reportar_incidente, limpiar_incidente, bloquear_via, desbloquear_via
-4. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
-5. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
+2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo  
+3. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
+4. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
 
 CAUSAS VÁLIDAS:
 congestion, accidente, construccion, evento_especial, clima_adverso, mantenimiento, emergencia, hora_pico, bloqueo_temporal, optimizacion_flujo

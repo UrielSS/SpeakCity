@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 
-const TrafficSimulation = ({ setTrafficAPI }) => {
+const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
   const canvasWidth = 700;
   const canvasHeight = 500;
   const hortBlocks = 4;
@@ -590,11 +590,28 @@ const TrafficSimulation = ({ setTrafficAPI }) => {
 
     
     setTrafficAPI({ closeStreet, openStreet });
+    
+    const interval = setInterval(() => {
+    // Número de carros
+    const currentNumCars = carsRef.current.length;
+    setNumCars(currentNumCars);
+
+    // Número de calles cerradas
+    const closed = closedStreetsRef.current.size;
+    setCloseStreets(closed);
+
+    // Número de calles abiertas
+    const total = allStreetsRef.current.size;
+    const opened = total - closed;
+    setOpenStreets(opened);
+  }, 500);
+   
 
     return () => {
         if (appRef.current) {
         appRef.current.destroy(true);
         }
+        clearInterval(interval);
     };
     }, []);
 

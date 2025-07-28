@@ -9,14 +9,14 @@ import TrafficSimulation from './TrafficSimulation';
 function App() {
   const [users, setUsers] = useState([])
   const [showModal, setShowModal] = useState(false);
-  // const [numCarros, setNumCarros] = useState(0)
-  // const [callesAbiertas, setCallesAbiertas] = useState(0)
-  // const [callesCerradas, setCallesCerradas] = useState(0)
+  const [numCarros, setNumCarros] = useState(0)
+  const [callesAbiertas, setCallesAbiertas] = useState(0)
+  const [callesCerradas, setCallesCerradas] = useState(0)
   const [trafficAPI, setTrafficAPI] = React.useState({});
 
   return (
     <div className="app-container">
-     
+
       {/* Header principal */}
       <header className="app-header">
         <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
@@ -32,7 +32,7 @@ function App() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Acerca de Nosotros</h2>
             <p>
-              
+              Ola
             </p>
             <button onClick={() => setShowModal(false)}>Cerrar</button>
           </div>
@@ -41,33 +41,38 @@ function App() {
 
       {/* Contenido principal */}
       <main className="main-content">
+        {/* Proveedor de contexto envolviendo TODO si es necesario */}
+        <TrafficContext.Provider value={trafficAPI}>
 
-        {/* Dashboard principal */}
-        {/* <Dashboard
-          numCarros={numCarros}
-          callesAbiertas={callesAbiertas}
-          callesCerradas={callesCerradas}
-        /> */}
+          {/* Layout de chat y mapa */}
+          <div className="app-layout">
+            {/* Sección del chat */}
+            <section className="chat-section">
+              <ChatBox />
+            </section>
 
-        {/* Layout de chat y mapa */}
-        <div className="app-layout">
-          <TrafficContext.Provider value={trafficAPI}>
-          {/* Sección del chat */}
-          <section className="chat-section">
-            <ChatBox />
-          </section>
+            {/* Sección del mapa */}
+            <section className="map-section">
+              <div className="map-placeholder">
+                <h3>Mapa de la Ciudad</h3>
+                <TrafficSimulation setTrafficAPI={setTrafficAPI}
+                  setCloseStreets={(n) => setCallesCerradas(n)}
+                  setOpenStreets={(n) => setCallesAbiertas(n)}
+                  setNumCars={(n) => setNumCarros(n)} />
+              </div>
+            </section>
+          </div>
 
-          {/* Sección del mapa */}
-          <section className="map-section">
-            <div className="map-placeholder">
-              <h3>Mapa de la Ciudad</h3>
-                <TrafficSimulation setTrafficAPI={setTrafficAPI} />
-              {/*<TrafficSimulation />*/}
-            </div>
-          </section>
-          </TrafficContext.Provider>
-        </div>
+          {/* Dashboard principal */}
+          <Dashboard
+            numCarros={numCarros}
+            callesAbiertas={callesAbiertas}
+            callesCerradas={callesCerradas}
+          />
+
+        </TrafficContext.Provider>
       </main>
+
     </div>
   );
 }
