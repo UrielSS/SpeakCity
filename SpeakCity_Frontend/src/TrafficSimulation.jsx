@@ -138,6 +138,86 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
     }
   }
 
+class TrafficLight {
+    constructor(intersection, direction, streetContainer) {
+        this.intersection = intersection; // Objeto Intersection
+        this.direction = direction; // 'top', 'bottom', 'left', 'right'
+        this.container = streetContainer; // Contenedor de PixiJS donde se añadirá
+        this.state = 'green'; // Estado inicial
+        this.timer = null;
+
+        this.circle = new PIXI.Graphics();
+        this.container.addChild(this.circle);
+        this.draw();
+    }
+
+    getPosition() {
+        const [x, y, w, h] = this.intersection.dimensions;
+
+        const offset = 10;
+        switch (this.direction) {
+            case 'top':
+                return { x: x + w / 2, y: y - offset };
+            case 'bottom':
+                return { x: x + w / 2, y: y + h + offset };
+            case 'left':
+                return { x: x - offset, y: y + h / 2 };
+            case 'right':
+                return { x: x + w + offset, y: y + h / 2 };
+        }
+    }
+
+    draw() {
+        this.circle.clear();
+        const color = this.state === 'green' ? 0x00ff00 : 0xff0000;
+        const { x, y } = this.getPosition();
+
+        this.circle.beginFill(color, 0.5);
+        this.circle.drawCircle(x, y, 8);
+        this.circle.endFill();
+    }
+
+    setState(newState) {
+        if (this.state === newState) return;
+        this.state = newState;
+        this.draw();
+    }
+
+    toggle() {
+        this.setState(this.state === 'green' ? 'red' : 'green');
+    }
+
+    startTimer(interval = 6000) {
+        this.timer = setInterval(() => this.toggle(), interval);
+    }
+
+    stopTimer() {
+        clearInterval(this.timer);
+    }
+
+    isRed() {
+        return this.state === 'red';
+    }
+
+    getStopZone() {
+        const [x, y, w, h] = this.intersection.dimensions;
+        const margin = 20;
+
+        switch (this.direction) {
+            case 'top':
+                return new PIXI.Rectangle(x, y - margin, w, margin);
+            case 'bottom':
+                return new PIXI.Rectangle(x, y + h, w, margin);
+            case 'left':
+                return new PIXI.Rectangle(x - margin, y, margin, h);
+            case 'right':
+                return new PIXI.Rectangle(x + w, y, margin, h);
+        }
+    }
+}
+
+
+
   // Clase para representar una Intersección
   class Intersection {
     constructor(id, dimensions, container) {
@@ -357,6 +437,54 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
       setComplex(blockContainer);
 
+    function startSyncedCycle(topLight, bottomLight, leftLight, rightLight, greenTime = 6000) {
+    // Fase inicial: vertical en verde
+    topLight.setState('green');
+    bottomLight.setState('green');
+    leftLight.setState('red');
+    rightLight.setState('red');
+
+    setInterval(() => {
+        // Fase horizontal verde
+        topLight.setState('red');
+        bottomLight.setState('red');
+        leftLight.setState('green');
+        rightLight.setState('green');
+
+        setTimeout(() => {
+            // Fase vertical verde
+            topLight.setState('green');
+            bottomLight.setState('green');
+            leftLight.setState('red');
+            rightLight.setState('red');
+        }, greenTime);
+    }, greenTime * 2);
+}
+
+    // Crear semáforos para intersección
+    const trafficLights = [];
+
+    for (const [id, intersection] of allIntersectionsRef.current) {
+
+        if (!["I22", "I21", "I12"].includes(id)) continue;
+        
+        // 4 lados por intersección
+        const topLight = new TrafficLight(intersection, 'top', streetContainer);
+        const bottomLight = new TrafficLight(intersection, 'bottom', streetContainer);
+        const leftLight = new TrafficLight(intersection, 'left', streetContainer);
+        const rightLight = new TrafficLight(intersection, 'right', streetContainer);
+
+        trafficLights.push(topLight, bottomLight, leftLight, rightLight);
+
+        // Puedes configurar tiempos diferentes si quieres
+        topLight.startTimer(6000);
+        bottomLight.startTimer(6000);
+        leftLight.startTimer(6000);
+        rightLight.startTimer(6000);
+
+        startSyncedCycle(topLight, bottomLight, leftLight, rightLight, 6000);
+    }
+
       // Creación de carros
       const cars = [];
       for (let i = 1; i < hortBlocks; i++) {
@@ -526,6 +654,57 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           if (!carANearIntersection) {
             carA.resume();
           }
+
+         for (const light of trafficLights) {
+    const stopZone = light.getStopZone();
+
+    // Solo aplica si el auto va en la misma orientación que el semáforo
+    const dir = light.direction;
+    const isVerticalLight = (dir === 'top' || dir === 'bottom');
+    const matchesDirection =
+        (carA.isVertical && isVerticalLight) ||
+        (!carA.isVertical && !isVerticalLight);
+
+    if (!matchesDirection) continue;
+
+    if (light.isRed()) {
+        const carSensor = carA.getBounds();
+
+        if (areRectanglesIntersecting(carSensor, stopZone)) {
+
+            // Verificamos si el coche ya pasó la intersección
+            const [ix, iy, iw, ih] = light.intersection.dimensions;
+            const carCenter = {
+                x: carSensor.x + carSensor.width / 2,
+                y: carSensor.y + carSensor.height / 2
+            };
+
+            let shouldStop = false;
+
+            if (carA.isVertical) {
+                if (carA.direction === 1 && carCenter.y < iy) {
+                    shouldStop = true; // Va hacia abajo y aún no entra
+                }
+                if (carA.direction === -1 && carCenter.y > iy + ih) {
+                    shouldStop = true; // Va hacia arriba y aún no entra
+                }
+            } else {
+                if (carA.direction === 1 && carCenter.x < ix) {
+                    shouldStop = true; // Va hacia la derecha y aún no entra
+                }
+                if (carA.direction === -1 && carCenter.x > ix + iw) {
+                    shouldStop = true; // Va hacia la izquierda y aún no entra
+                }
+            }
+
+            if (shouldStop) {
+                carA.stop();
+                break;
+            }
+        }
+    }
+}
+
 
           // Verificación por calle cerrada
           for (const [streetId] of closedStreetsRef.current) {

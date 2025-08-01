@@ -10,6 +10,7 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+  overflow-y: visible;
 }
 
 .chat-container::before {
