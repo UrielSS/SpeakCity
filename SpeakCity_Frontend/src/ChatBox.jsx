@@ -8,6 +8,7 @@ function ChatBox() {
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [error, setError] = useState('');
+  const { closeStreet, openStreet } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
   useEffect(() => {
@@ -48,28 +49,50 @@ function ChatBox() {
       
       const data = await res.json();
       console.log(data);
-      
-      if (data.success) {
-        setResponse(data.response);
-        // Actualizar estado del backend si es demo
-        if (data.demo_mode) {
-          setBackendStatus('demo');
-        }
-        
-        // Mostrar notificación de comando procesado
-        mostrarNotificacionComando(data.response);
-      } else {
-        setError(data.error || 'Error desconocido');
-        if (data.suggestion) {
-          setError(prev => prev + `\n\nSugerencia: ${data.suggestion}`);
-        }
+
+         if (data.success && data.response) {
+      const { accion, calle } = data.response;
+
+      // Aplicar comandos al sistema de tráfico
+      if (
+        accion === 'cerrar_calle' ||
+        accion === 'bloquear_via' ||
+        accion === 'cerrar_cruce'
+      ) {
+        closeStreet(calle);
+      } else if (
+        accion === 'abrir_calle' ||
+        accion === 'desbloquear_via' ||
+        accion === 'abrir_cruce'
+      ) {
+        openStreet(calle);
       }
-    } catch (error) {
-      setError(`Error de conexión: ${error.message}`);
-      setBackendStatus('error');
-    } finally {
-      setLoading(false);
+
+      setResponse(data.response);
+      mostrarNotificacionComando(data.response);
+
+      if (data.demo_mode) {
+        setBackendStatus('demo');
+      } else {
+        setBackendStatus('connected');
+      }
+
+    } else {
+      // ⚠️ Comando inválido pero no es error de red
+      setError(data.error || 'El mensaje no fue entendido como comando de tráfico.');
+      if (data.suggestion) {
+        setError(prev => `${prev}\n\n💡 ${data.suggestion}`);
+      }
+      setBackendStatus('connected');
     }
+
+  } catch (error) {
+    // ❌ Error real de conexión
+    setError(`Error de conexión: ${error.message}`);
+    setBackendStatus('error');
+  } finally {
+    setLoading(false);
+  }
   };
 
   const mostrarNotificacionComando = (comando) => {
@@ -89,15 +112,15 @@ function ChatBox() {
     // Agregar estilos
     notificacion.style.cssText = `
       position: fixed;
-      top: 20px;
+      top: 65px;
       right: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg,rgb(184, 192, 228) 0%,rgb(191, 181, 200) 100%);
       color: white;
       padding: 15px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       z-index: 1000;
-      max-width: 300px;
+      max-width: 400px;
       animation: slideIn 0.5s ease-out;
     `;
     
@@ -127,7 +150,7 @@ function ChatBox() {
       setTimeout(() => {
         document.body.removeChild(notificacion);
       }, 500);
-    }, 4000);
+    }, 6000);
   };
 
   const handleKeyPress = (e) => {
@@ -164,9 +187,9 @@ function ChatBox() {
 
   // Lista de ejemplos
   const examples = [
-    "Cierra la calle H2 por mantenimiento",
-    "Acaba de haber un choque en la calle V1, bloque el paso",
-    "La calle V3 se acaba de inundar"
+    "Cierra la calle H20 por mantenimiento",
+    "Acaba de haber un choque en la calle V11, bloque el paso",
+    "La calle V32 se acaba de inundar"
   ];
 
   return (
@@ -217,18 +240,6 @@ function ChatBox() {
       )}
 
       {/* Respuesta del sistema */}
-      {response && (
-        <div className="response-container">
-          <h3>📋 Comando Procesado:</h3>
-          <div className="response-text">
-             <p><strong>Acción:</strong> {response.accion}</p>
-             <p><strong>Calle:</strong> {response.calle}</p>
-             <p><strong>Causa:</strong> {response.causa}</p>
-             <p><strong>Prioridad:</strong> {response.prioridad}</p>
-             <p><strong>Duración estimada:</strong> {response.duracion_estimada || 'No especificada'} en minutos</p>
-          </div>
-        </div>
-      )}
 
       {/* Ejemplos de comandos */}
       <div className="examples-container">

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
-
 import { Car } from "./Classes/Car";
 import { TrafficLight } from "./Classes/TrafficLight";
 import { preloadAssets } from "./Utils/preloadAssets";
@@ -8,14 +7,15 @@ import {
   areRectanglesIntersecting, 
   drawStreets, 
   drawIntersections, 
+  drawPerimeterIntersections,
   setComplex, 
-  setNameStreets,
-  drawPerimeterIntersections 
+  setNameStreets 
 } from "./utils/utils";
 import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
 
 const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
-  const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
+ 
+ const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
   const { wVS, wHS } = CALCULATED_VALUES;
 
   const pixiContainerRef = useRef(null);
@@ -34,7 +34,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
     console.log(`Calle ${nameStreet} cerrada.`);
   };
 
-  const openStreet = (nameStreet = "H10", allStreets, closedStreets) => {
+  const openStreet = (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     if (closedStreets.has(nameStreet)) {
       const streetToOpen = allStreets.get(nameStreet);
       if (streetToOpen) {
@@ -47,7 +47,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
   useEffect(() => {
     const initPixiApp = async () => {
-      await preloadAssets();
+      await preloadAssets(); // ¡AQUÍ ESTABA EL ERROR! Llamabas preloadElements() en lugar de preloadAssets()
 
       const app = new PIXI.Application();
       await app.init({
@@ -57,9 +57,10 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
         antialias: true
       });
       
-      pixiContainerRef.current.appendChild(app.view);
+      pixiContainerRef.current.appendChild(app.canvas);
       appRef.current = app;
 
+      // Resto de tu código de inicialización...
       const backgroundTexture = PIXI.Texture.from('grass_bg');
       const background = new PIXI.Sprite(backgroundTexture);
       background.width = app.screen.width;
@@ -70,55 +71,14 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
       const streetContainer = new PIXI.Container();
       const intersectionContainer = new PIXI.Container();
       const carsContainer = new PIXI.Container();
+      const labelContainer = new PIXI.Container();
+
       app.stage.addChild(blockContainer);
       app.stage.addChild(streetContainer);
       app.stage.addChild(intersectionContainer);
       app.stage.addChild(carsContainer);
+      app.stage.addChild(labelContainer);
 
-    };
-
-    initPixiApp();
-
-    return () => {
-      if (appRef.current) {
-        appRef.current.destroy(true);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const initPixiApp = async () => {
-        await preloadElements();
-        
-        const app = new PIXI.Application();
-        await app.init({
-        width: canvasWidth,
-        height: canvasHeight,
-        backgroundColor: 0x1099bb,
-        antialias: true // Opcional para mejor renderizado
-        });
-        
-        pixiContainerRef.current.appendChild(app.canvas);
-        appRef.current = app;
-
-        // Resto de tu código de inicialización...
-        const backgroundTexture = PIXI.Texture.from('grass_bg');
-        const background = new PIXI.Sprite(backgroundTexture);
-        background.width = app.screen.width;
-        background.height = app.screen.height;
-        app.stage.addChildAt(background, 0);
-
-        const blockContainer = new PIXI.Container();
-        const streetContainer = new PIXI.Container();
-        const intersectionContainer = new PIXI.Container();
-        const carsContainer = new PIXI.Container();
-        
-        app.stage.addChild(blockContainer);
-        app.stage.addChild(streetContainer);
-        app.stage.addChild(intersectionContainer);
-        app.stage.addChild(carsContainer);
-
-        
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
       drawPerimeterIntersections(intersectionContainer, allIntersectionsRef.current);
@@ -179,6 +139,13 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
         const rightLight = new TrafficLight(intersection, 'right', streetContainer);
 
         trafficLights.push(topLight, bottomLight, leftLight, rightLight);
+
+        // Configurar tiempos
+        topLight.startTimer(6000);
+        bottomLight.startTimer(6000);
+        leftLight.startTimer(6000);
+        rightLight.startTimer(6000);
+
         startSyncedCycle(topLight, bottomLight, leftLight, rightLight, 6000);
       }
 
@@ -193,10 +160,9 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           texture1,
           false,
           { x: 0, y: wHS * i - (halfWidthStreets / 2) },
-          -1,
+          1,
           1 + Math.random()
         );
-        car1.scale.x *= -1;
         carsContainer.addChild(car1);
         cars.push(car1);
 
@@ -205,9 +171,10 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           texture2,
           false,
           { x: canvasWidth, y: wHS * i + (halfWidthStreets / 2) },
-          1,
+          -1,
           1 + Math.random()
         );
+        car2.scale.x *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
       }
@@ -243,6 +210,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
       carsRef.current = cars;
 
+      // Configurar el game loop
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
 

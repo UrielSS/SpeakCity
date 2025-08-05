@@ -36,7 +36,7 @@ else:
 # Definición de acciones, causas y calles válidas (Diccionarios)
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo', 'activar_semaforo', 'desactivar_semaforo', 'programar_semaforo'],
-    'flujo': ['abrir_carril', 'cerrar_carril', 'redirigir_trafico', 'controlar_flujo'],
+    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
     'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia']
@@ -47,7 +47,8 @@ CAUSAS_VALIDAS = [
     'mantenimiento', 'emergencia', 'hora_pico', 'bloqueo_temporal', 'optimizacion_flujo'
 ]
 
-CALLES_VALIDAS = [f'V{i}' for i in range(1, 4)] + [f'H{i}' for i in range(1, 3)]
+CALLES_VALIDAS = ['H10', 'H11', 'H12', 'H13', 'H20', 'H21', 'H22', 'H23', 'H30', 'H31', 'H32', 'H33',
+                    'V10', 'V11', 'V12', 'V13', 'V20', 'V21', 'V22', 'V23', 'V30', 'V31', 'V32', 'V33']
 
 class ComandoTrafico(BaseModel):
     accion: str = Field(..., description="Acción específica a realizar en el sistema de tráfico")
@@ -118,15 +119,14 @@ CONTEXTO ESPECÍFICO:
 
 COMANDOS VÁLIDOS:
 1. SEMÁFOROS: cambiar_semaforo, activar_semaforo, desactivar_semaforo, programar_semaforo
-2. FLUJO: abrir_carril, cerrar_carril, redirigir_trafico, controlar_flujo  
-3. INCIDENTES: reportar_incidente, limpiar_incidente, bloquear_via, desbloquear_via
-4. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
-5. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
+2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo  
+3. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
+4. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
 
 CAUSAS VÁLIDAS:
 congestion, accidente, construccion, evento_especial, clima_adverso, mantenimiento, emergencia, hora_pico, bloqueo_temporal, optimizacion_flujo
 
-CALLLES PERMITIDAS: V1–V3 (verticales), H1–H2 (horizontales)
+CALLLES PERMITIDAS: {CALLES_VALIDAS}
 
 INSTRUCCIONES:
 - Si el comando NO está relacionado con tráfico, responde con accion: "comando_invalido"
@@ -171,156 +171,6 @@ def generar_respuesta_demo(mensaje: str) -> Dict[str, Any]:
         'duracion_estimada': 30
     }
 
-# Estado global del mapa
-class EstadoMapa:
-    def __init__(self):
-        self.calles_cerradas = set()  # Set de calles cerradas
-        self.semaforos_estado = {}    # Estado de semáforos
-        self.vehiculos = []           # Lista de vehículos
-        self.incidentes = {}          # Incidentes activos
-        self.lock = threading.Lock()  # Para thread safety
-        
-        # Inicializar semáforos
-        for calle in CALLES_VALIDAS:
-            self.semaforos_estado[calle] = {
-                'estado': 'verde',
-                'tiempo_restante': 30,
-                'ultimo_cambio': time.time()
-            }
-        
-        # Inicializar vehículos
-        self.inicializar_vehiculos()
-    
-    def inicializar_vehiculos(self):
-        """Inicializa vehículos en el mapa"""
-        self.vehiculos = []
-        
-        # Vehículos en calles verticales
-        for i, calle in enumerate(['V1', 'V2', 'V3']):
-            for j in range(1):  # 3 vehículos por calle
-                self.vehiculos.append({
-                    'id': f'v_{calle}_{j}',
-                    'tipo': 'auto',
-                    'calle': calle,
-                    'posicion': random.uniform(0, 0),  # Posición Y
-                    'velocidad': random.uniform(0.5, 2.0),
-                    'direccion': 'sur',  # Verticales van de norte a sur
-                    'color': self.get_color_vehiculo(),
-                    'activo': True
-                })
-        
-        # Vehículos en calles horizontales
-        for i, calle in enumerate(['H1', 'H2']):
-            for j in range(1):  # 2 vehículos por calle horizontal
-                self.vehiculos.append({
-                    'id': f'h_{calle}_{j}',
-                    'tipo': 'auto',
-                    'calle': calle,
-                    'posicion': random.uniform(0, 0),  # Posición X
-                    'velocidad': random.uniform(0.5, 2.0),
-                    'direccion': 'este',  # Horizontales van de oeste a este
-                    'color': self.get_color_vehiculo(),
-                    'movimiento': True,
-                    'activo': True
-                })
-    
-    def get_color_vehiculo(self):
-        """Retorna un color aleatorio para el vehículo"""
-        colores = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
-        return random.choice(colores)
-    
-    def cerrar_calle(self, calle: str):
-        """Cierra una calle"""
-        with self.lock:
-            self.calles_cerradas.add(calle)
-            # Detener vehículos en esa calle
-            for vehiculo in self.vehiculos:
-                if vehiculo['calle'] == calle:
-                    vehiculo['activo'] = False
-    
-    def abrir_calle(self, calle: str):
-        """Abre una calle"""
-        with self.lock:
-            self.calles_cerradas.discard(calle)
-            # Reactivar vehículos en esa calle
-            for vehiculo in self.vehiculos:
-                if vehiculo['calle'] == calle:
-                    vehiculo['activo'] = True
-    
-    def cambiar_semaforo(self, calle: str, estado: str):
-        """Cambia el estado de un semáforo"""
-        with self.lock:
-            if calle in self.semaforos_estado:
-                self.semaforos_estado[calle]['estado'] = estado
-                self.semaforos_estado[calle]['ultimo_cambio'] = time.time()
-    
-    def actualizar_vehiculos(self):
-        """Actualiza las posiciones de los vehículos"""
-        # Definir posiciones de intersección para cada calle
-        intersecciones = {
-            # H1 cruza V1, V2, V3
-            'H1': {'V1': 120, 'V2': 245, 'V3': 370},
-            # H2 cruza V1, V2, V3
-            'H2': {'V1': 120, 'V2': 245, 'V3': 370},
-            # V1 cruza H1, H2
-            'V1': {'H1': 128, 'H2': 261},
-            'V2': {'H1': 128, 'H2': 261},
-            'V3': {'H1': 128, 'H2': 261},
-        }
-        
-        with self.lock:
-            for vehiculo in self.vehiculos:
-                if not vehiculo['activo']:
-                    continue
-                
-                #Revisa si las intersecciones con las calles están cerradas
-                for calle_cerrada in self.calles_cerradas:
-                    if calle_cerrada in intersecciones[vehiculo['calle']]: # Si la calle cerrada está en las intersecciones de la calle del vehículo
-                        pos_inter = intersecciones[vehiculo['calle']][calle_cerrada] # Obtiene posición de intersección
-                        if vehiculo['movimiento']:
-                            # Si está antes o después de la intersección con calle cerrada, avanza
-                            if vehiculo['posicion'] + vehiculo['velocidad'] < pos_inter -5 or vehiculo['posicion'] + vehiculo['velocidad'] > pos_inter + 5:
-                                vehiculo['posicion'] += vehiculo['velocidad']
-                            else:
-                                vehiculo['posicion'] = pos_inter - 5  # Se detiene justo antes
-                                vehiculo['movimiento'] = False # Desactiva bandera de movimiento
-                else: # Si no hay intersección cerrada, avanza normal
-                    vehiculo['movimiento'] = True #Activa bandera de movimiento
-                    vehiculo['posicion'] += vehiculo['velocidad']
-                    # Reinicio de movimiento del coche
-                    if vehiculo['direccion'] == 'este' and vehiculo['posicion'] > 500:
-                            vehiculo['posicion'] = 0
-                    elif vehiculo['direccion'] == 'sur' and vehiculo['posicion'] > 400:
-                            vehiculo['posicion'] = 0
-    
-    def get_estado(self):
-        """Retorna el estado completo del mapa"""
-        with self.lock:
-            return {
-                'calles_cerradas': list(self.calles_cerradas),
-                'calles_abiertas': self.get_calles_abiertas(),
-                'semaforos': self.semaforos_estado,
-                'vehiculos': self.vehiculos,
-                'incidentes': self.incidentes
-            }
-
-    def get_calles_abiertas(self) -> int:
-        return len(CALLES_VALIDAS) - len(self.calles_cerradas)
-
-# Instancia global del estado del mapa
-estado_mapa = EstadoMapa()
-
-# Thread para actualizar vehículos
-def actualizar_vehiculos_thread():
-    """Thread que actualiza las posiciones de los vehículos"""
-    while True:
-        estado_mapa.actualizar_vehiculos()
-        time.sleep(0.1)  # Actualizar cada 100ms
-
-# Iniciar thread de actualización
-thread_actualizacion = threading.Thread(target=actualizar_vehiculos_thread, daemon=True)
-thread_actualizacion.start()
-
 @app.route('/')
 def hello_world():
     return jsonify({
@@ -331,6 +181,7 @@ def hello_world():
         'api_status': 'Configurada' if not DEMO_MODE else 'Demo Mode'
     })
 
+
 @app.route('/api/status')
 def status():
     """Endpoint para verificar el estado del sistema"""
@@ -340,6 +191,7 @@ def status():
         'demo_mode': DEMO_MODE,
         'api_configured': not DEMO_MODE
     })
+
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -379,7 +231,7 @@ def chat():
             comando = ComandoTrafico(**comando_dict)
         else:
             prompt = generar_prompt_contextual(mensaje_sanitizado)
-
+            # print(prompt)
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=prompt,
@@ -393,7 +245,7 @@ def chat():
 
             # Resultado como objeto clase
             comando: ComandoTrafico = response.parsed
-
+        # print(comando)
         # Validación final: comando inválido
         if comando.dict().get('accion') == 'comando_invalido':
             return jsonify({
@@ -403,7 +255,7 @@ def chat():
             }), 400
 
         # Aplicar cambios al mapa según el comando
-        aplicar_cambios_mapa(comando)
+        # aplicar_cambios_mapa(comando)
 
         logger.info(f"Comando procesado exitosamente: {comando.dict()}")
 
@@ -419,152 +271,6 @@ def chat():
             "error": str(e),
             "success": False,
             "demo_mode": DEMO_MODE
-        }), 500
-
-def aplicar_cambios_mapa(comando: ComandoTrafico):
-    """Aplica los cambios al mapa según el comando recibido"""
-    accion = comando.accion
-    calle = comando.calle
-    
-    logger.info(f"Aplicando cambio: {accion} en {calle}")
-    
-    if accion in ['cerrar_carril', 'bloquear_via']:
-        estado_mapa.cerrar_calle(calle)
-    elif accion in ['abrir_carril', 'desbloquear_via']:
-        estado_mapa.abrir_calle(calle)
-    elif accion in ['cambiar_semaforo', 'activar_semaforo']:
-        # Cambiar a rojo si hay congestión o accidente
-        nuevo_estado = 'rojo' if comando.causa in ['congestion', 'accidente'] else 'verde'
-        estado_mapa.cambiar_semaforo(calle, nuevo_estado)
-    elif accion == 'desactivar_semaforo':
-        estado_mapa.cambiar_semaforo(calle, 'amarillo')
-    elif accion == 'reportar_incidente':
-        estado_mapa.cerrar_calle(calle)
-        estado_mapa.incidentes[calle] = {
-            'tipo': comando.causa,
-            'tiempo': time.time(),
-            'duracion': comando.duracion_estimada or 30
-        }
-
-@app.route('/api/mapa/estado')
-def obtener_estado_mapa():
-    """Endpoint para obtener el estado actual del mapa"""
-    try:
-        estado = estado_mapa.get_estado()
-        return jsonify({
-            'success': True,
-            'estado': estado,
-            'timestamp': datetime.now().isoformat()
-        })
-    except Exception as e:
-        logger.error(f"Error obteniendo estado del mapa: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'success': False
-        }), 500
-
-@app.route('/api/mapa/cerrar-calle', methods=['POST'])
-def cerrar_calle_endpoint():
-    """Endpoint para cerrar una calle específica"""
-    try:
-        data = request.get_json()
-        calle = data.get('calle')
-        
-        if not calle or calle not in CALLES_VALIDAS:
-            return jsonify({
-                'error': 'Calle no válida',
-                'success': False
-            }), 400
-        
-        estado_mapa.cerrar_calle(calle)
-        
-        return jsonify({
-            'success': True,
-            'mensaje': f'Calle {calle} cerrada exitosamente'
-        })
-    except Exception as e:
-        logger.error(f"Error cerrando calle: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'success': False
-        }), 500
-
-@app.route('/api/mapa/abrir-calle', methods=['POST'])
-def abrir_calle_endpoint():
-    """Endpoint para abrir una calle específica"""
-    try:
-        data = request.get_json()
-        calle = data.get('calle')
-        
-        if not calle or calle not in CALLES_VALIDAS:
-            return jsonify({
-                'error': 'Calle no válida',
-                'success': False
-            }), 400
-        
-        estado_mapa.abrir_calle(calle)
-        
-        return jsonify({
-            'success': True,
-            'mensaje': f'Calle {calle} abierta exitosamente'
-        })
-    except Exception as e:
-        logger.error(f"Error abriendo calle: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'success': False
-        }), 500
-
-@app.route('/api/mapa/semaforo', methods=['POST'])
-def cambiar_semaforo_endpoint():
-    """Endpoint para cambiar el estado de un semáforo"""
-    try:
-        data = request.get_json()
-        calle = data.get('calle')
-        estado = data.get('estado', 'verde')
-        
-        if not calle or calle not in CALLES_VALIDAS:
-            return jsonify({
-                'error': 'Calle no válida',
-                'success': False
-            }), 400
-        
-        if estado not in ['verde', 'amarillo', 'rojo']:
-            return jsonify({
-                'error': 'Estado de semáforo no válido',
-                'success': False
-            }), 400
-        
-        estado_mapa.cambiar_semaforo(calle, estado)
-        
-        return jsonify({
-            'success': True,
-            'mensaje': f'Semáforo en {calle} cambiado a {estado}'
-        })
-    except Exception as e:
-        logger.error(f"Error cambiando semáforo: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'success': False
-        }), 500
-
-@app.route('/api/mapa/reset', methods=['POST'])
-def reset_mapa():
-    """Endpoint para resetear el estado del mapa"""
-    try:
-        # Reinicializar el estado del mapa
-        global estado_mapa
-        estado_mapa = EstadoMapa()
-        
-        return jsonify({
-            'success': True,
-            'mensaje': 'Mapa reseteado exitosamente'
-        })
-    except Exception as e:
-        logger.error(f"Error reseteando mapa: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'success': False
         }), 500
 
 if __name__ == '__main__':
