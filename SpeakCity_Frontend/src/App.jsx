@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import React, { useState, useEffect } from 'react'
+import './styles/App.css'
 import ChatBox from './ChatBox'
 import Dashboard from './Dashboard'
-import Model from './Model'
 import TrafficSimulation from './TrafficSimulation';
 
 function App() {
-  const [users, setUsers] = useState([])
   const [showModal, setShowModal] = useState(false);
   // const [numCarros, setNumCarros] = useState(0)
   // const [callesAbiertas, setCallesAbiertas] = useState(0)

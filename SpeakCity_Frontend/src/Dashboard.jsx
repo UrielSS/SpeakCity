@@ -1,4 +1,3 @@
-// Dashboard.jsx
 function Dashboard({ numCarros, callesAbiertas, callesCerradas }) {
   return (
     <section className="dashboard-wrapper">

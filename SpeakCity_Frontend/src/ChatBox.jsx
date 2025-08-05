@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import './ChatBox.css';
+import React, { useState, useEffect, useContext } from 'react';
+import { TrafficContext } from './TrafficContext';
+import './styles/ChatBox.css';
 
 function ChatBox() {
   const [message, setMessage] = useState('');

@@ -1,235 +1,37 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 
-const TrafficSimulation = () => {
-  const canvasWidth = 700;
-  const canvasHeight = 500;
-  const hortBlocks = 4;
-  const vertBlocks = 4;
-  const wVS = Math.floor(canvasWidth / vertBlocks);
-  const wHS = Math.floor(canvasHeight / hortBlocks);
-  const halfWidthStreets = 15;
+import { Car } from "./Classes/Car";
+import { TrafficLight } from "./Classes/TrafficLight";
+import { preloadAssets } from "./Utils/preloadAssets";
+import { 
+  areRectanglesIntersecting, 
+  drawStreets, 
+  drawIntersections, 
+  setComplex, 
+  setNameStreets,
+  drawPerimeterIntersections 
+} from "./utils/utils";
+import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
 
-  // Clase para representar un carro
-  class Car extends PIXI.Sprite {
-    constructor(texture, isVertical, initialPosition, direction, speed) {
-      super(texture);
+const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
+  const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
+  const { wVS, wHS } = CALCULATED_VALUES;
 
-      this.isVertical = isVertical;
-      this.direction = direction;
-      this.speed = speed;
-      this.isStopped = false;
+  const pixiContainerRef = useRef(null);
+  const appRef = useRef(null);
+  const carsRef = useRef([]);
+  const allStreetsRef = useRef(new Map());
+  const allIntersectionsRef = useRef(new Map());
+  const closedStreetsRef = useRef(new Map());
 
-      this.anchor.set(0.5);
-      this.scale.set(0.025);
-
-      this.x = initialPosition.x;
-      this.y = initialPosition.y;
-
-      if (this.isVertical) {
-        this.rotation = this.direction === 1 ? Math.PI / 2 : -Math.PI / 2;
-      }
-    }
-
-    stop() {
-      this.isStopped = true;
-    }
-  
-    resume() {
-      this.isStopped = false;
-    }
-
-    update(deltaTime, appScreen) {
-      if (this.isStopped) return;
-      
-      if (!this.isVertical) {
-        this.x += this.speed * this.direction * deltaTime;
-
-        if (this.direction === 1 && this.x > appScreen.width + 100) {
-          this.x = -100;
-        } else if (this.direction === -1 && this.x < -100) {
-          this.x = appScreen.width + 100;
-        }
-      } else {
-        this.y += this.speed * this.direction * deltaTime;
-
-        if (this.direction === 1 && this.y > appScreen.height + 100) {
-          this.y = -100;
-        } else if (this.direction === -1 && this.y < -100) {
-          this.y = appScreen.height + 100;
-        }
-      }
-    }
-  }
-
-  // Clase para representar una Calle
-  class Street {
-    constructor(id, dimensions, orientation, container) {
-      this.id = id;
-      this.dimensions = dimensions;
-      this.orientation = orientation;
-      this.isClosed = false;
-      this.graphics = createStreetGraphic(dimensions);
-      this.graphics.label = id;
-      this.container = container;
-      this.container.addChild(this.graphics);
-      this.drawLaneLines();
-    }
-
-    drawLaneLines() {
-      const line = new PIXI.Graphics();
-      const line1 = new PIXI.Graphics();
-      const line2 = new PIXI.Graphics();
-
-      if (this.orientation === 'horizontal') {
-        line.moveTo(this.dimensions[0], this.dimensions[1] + halfWidthStreets);
-        line.lineTo(this.dimensions[0] + this.dimensions[2], this.dimensions[1] + halfWidthStreets);
-        line.stroke({ width: 2, pixelLine: true, color: 0xffffff });
-
-        line1.moveTo(this.dimensions[0], this.dimensions[1] + 2 * halfWidthStreets);
-        line1.lineTo(this.dimensions[0] + this.dimensions[2], this.dimensions[1] + 2 * halfWidthStreets);
-        line1.stroke({ width: 4, color: 0x353535 });
-
-        line2.moveTo(this.dimensions[0], this.dimensions[1]);
-        line2.lineTo(this.dimensions[0] + this.dimensions[2], this.dimensions[1]);
-        line2.stroke({ width: 4, color: 0x353535 });
-      } else {
-        line.moveTo(this.dimensions[0] + halfWidthStreets, this.dimensions[1]);
-        line.lineTo(this.dimensions[0] + halfWidthStreets, this.dimensions[1] + this.dimensions[3]);
-        line.stroke({ width: 2, pixelLine: true, color: 0xffffff });
-
-        line1.moveTo(this.dimensions[0] + 2 * halfWidthStreets, this.dimensions[1]);
-        line1.lineTo(this.dimensions[0] + 2 * halfWidthStreets, this.dimensions[1] + this.dimensions[3]);
-        line1.stroke({ width: 4, color: 0x353535 });
-
-        line2.moveTo(this.dimensions[0], this.dimensions[1]);
-        line2.lineTo(this.dimensions[0], this.dimensions[1] + this.dimensions[3]);
-        line2.stroke({ width: 4, color: 0x353535 });
-      }
-      this.container.addChild(line, line1, line2);
-    }
-
-    toggleClosed() {
-      this.isClosed = !this.isClosed;
-      const overlayName = `closed_overlay_${this.id}`;
-
-      if (this.isClosed) {
-        let closedStreetGraphic = createStreetGraphic(this.dimensions, 0xE4080A);
-        closedStreetGraphic.name = overlayName;
-        this.container.addChild(closedStreetGraphic);
-      } else {
-        const closedGraphic = this.container.getChildByName(overlayName);
-        if (closedGraphic) {
-          this.container.removeChild(closedGraphic);
-          closedGraphic.destroy(); 
-        }
-      }
-    }
-  }
-
-  // Clase para representar una Intersección
-  class Intersection {
-    constructor(id, dimensions, container) {
-      this.id = id;
-      this.dimensions = dimensions;
-      this.isClosed = false;
-      this.graphics = createStreetGraphic(dimensions, 0x6a6a6a, false);
-      this.container = container;
-      this.container.addChild(this.graphics);
-      this.connectedStreets = {};
-    }
-
-    toggleClosed() {
-      // Lógica para cambiar el estado de la intersección
-    }
-
-    addConnectedStreet(direction, streetObject) {
-      this.connectedStreets[direction] = streetObject;
-    }
-  }
-
-  // Función para crear un gráfico de calle
-  const createStreetGraphic = (streetDimension, color = 0x444444) => {
-    let context = new PIXI.GraphicsContext().fill(color);
-    let graphic = new PIXI.Graphics(context);
-    graphic.stroke({ width: 1, pixelLine: true });
-    graphic.rect(streetDimension[0], streetDimension[1], streetDimension[2], streetDimension[3]);
-    graphic.fill(color);
-    return graphic;
-  };
-
-  // Función para verificar la intersección de dos rectángulos
-  const areRectanglesIntersecting = (rect1, rect2) => {
-    return rect1.x < rect2.x + rect2.width &&
-           rect1.x + rect1.width > rect2.x &&
-           rect1.y < rect2.y + rect2.height &&
-           rect1.y + rect1.height > rect2.y;
-  };
-
-  const sleep = (ms) => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  };
-
-  const drawStreets = (container, streetsMap) => {
-    // Drawing horizontal streets
-    for (let i = 1; i < hortBlocks; i++) {
-      for (let j = 0; j < vertBlocks; j++) {
-        let streetDimension = [j * wVS, wHS * i - halfWidthStreets, wVS, 2 * halfWidthStreets];
-        const streetId = "H" + i + j;
-        const street = new Street(streetId, streetDimension, 'horizontal', container);
-        streetsMap.set(streetId, street);
-      }
-    }
-
-    // Drawing vertical streets
-    for (let i = 1; i < vertBlocks; i++) {
-      for (let j = 0; j < hortBlocks; j++) {
-        let streetDimension = [wVS * i - halfWidthStreets, j * wHS, 2 * halfWidthStreets, wHS];
-        const streetId = "V" + i + j;
-        const street = new Street(streetId, streetDimension, 'vertical', container);
-        streetsMap.set(streetId, street);
-      }
-    }
-  };
-
-  const drawIntersections = (container, intersectionsMap) => {
-    for (let i = 1; i < hortBlocks; i++) {
-      for (let j = 1; j < vertBlocks; j++) {
-        let intersectionDimension = [j * wVS - halfWidthStreets, wHS * i - halfWidthStreets, 2 * halfWidthStreets, 2 * halfWidthStreets];
-        const intersectionId = "I" + i + j;
-        const intersection = new Intersection(intersectionId, intersectionDimension, container);
-        intersectionsMap.set(intersectionId, intersection);
-      }
-    }
-  };
-
-  const setComplex = (container) => {
-    for (let i = 0; i < vertBlocks; i++) {
-      for (let j = 0; j < hortBlocks; j++) {
-        const spriteBlock = PIXI.Sprite.from('complex' + (1 + Math.floor(Math.random() * 7)));
-        if (i == 0 || j == 0) {
-          spriteBlock.x = i * wVS;
-          spriteBlock.y = j * wHS;
-        } else {
-          spriteBlock.x = i * wVS + halfWidthStreets;
-          spriteBlock.y = j * wHS + halfWidthStreets;
-        }
-        spriteBlock.scale.set(0.29);
-        container.addChild(spriteBlock);
-      }
-    }
-  };
-
-  const closeStreet = async (nameStreet = "H10", allStreets, closedStreets) => {
+  const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
     if (!streetToClose || closedStreets.has(nameStreet)) return;
 
     streetToClose.toggleClosed();
     closedStreets.set(nameStreet, true);
     console.log(`Calle ${nameStreet} cerrada.`);
-
-    await sleep(8000);
-    openStreet(nameStreet, allStreets, closedStreets);
   };
 
   const openStreet = (nameStreet = "H10", allStreets, closedStreets) => {
@@ -243,43 +45,16 @@ const TrafficSimulation = () => {
     }
   };
 
-  const preloadElements = async () => {
-    const assets = [
-      { alias: 'street', src: "/assets/street_texture.png" },
-      { alias: 'grass_bg', src: "assets/grass.png" },
-      { alias: 'city1_bg', src: "assets/city1.png" },
-      { alias: 'building', src: "assets/building1.png" },
-      { alias: 'complex1', src: "/assets/complex1.png" },
-      { alias: 'complex2', src: "/assets/complex2.png" },
-      { alias: 'complex3', src: "/assets/complex3.png" },
-      { alias: 'complex4', src: "/assets/complex4.png" },
-      { alias: 'complex5', src: "/assets/complex5.png" },
-      { alias: 'complex6', src: "/assets/complex6.png" },
-      { alias: 'complex7', src: "/assets/complex7.png" },
-      { alias: 'car1', src: "/assets/car1.png" },
-      { alias: 'car2', src: "/assets/car2.png" },
-      { alias: 'car3', src: "/assets/car3.png" },
-      { alias: 'car4', src: "/assets/car4.png" },
-      { alias: 'car5', src: "/assets/car5.png" }
-    ];
-    await PIXI.Assets.load(assets);
-  };
-
-  const pixiContainerRef = useRef(null);
-  const appRef = useRef(null);
-  const carsRef = useRef([]);
-  const allStreetsRef = useRef(new Map());
-  const allIntersectionsRef = useRef(new Map());
-  const closedStreetsRef = useRef(new Map());
-
   useEffect(() => {
     const initPixiApp = async () => {
-      await preloadElements();
-      
-      const app = new PIXI.Application({
+      await preloadAssets();
+
+      const app = new PIXI.Application();
+      await app.init({
         width: canvasWidth,
         height: canvasHeight,
-        backgroundColor: 0x1099bb
+        backgroundColor: 0x1099bb,
+        antialias: true
       });
       
       pixiContainerRef.current.appendChild(app.view);
@@ -346,6 +121,8 @@ const TrafficSimulation = () => {
         
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
+      drawPerimeterIntersections(intersectionContainer, allIntersectionsRef.current);
+      setNameStreets(allStreetsRef.current, labelContainer);
 
       // Asignar calles conectadas a las intersecciones
       for (let i = 1; i < hortBlocks; i++) {
@@ -365,6 +142,46 @@ const TrafficSimulation = () => {
 
       setComplex(blockContainer);
 
+      function startSyncedCycle(topLight, bottomLight, leftLight, rightLight, greenTime = 6000) {
+        // Fase inicial: vertical en verde
+        topLight.setState('green');
+        bottomLight.setState('green');
+        leftLight.setState('red');
+        rightLight.setState('red');
+
+        setInterval(() => {
+          // Fase horizontal verde
+          topLight.setState('red');
+          bottomLight.setState('red');
+          leftLight.setState('green');
+          rightLight.setState('green');
+
+          setTimeout(() => {
+            // Fase vertical verde
+            topLight.setState('green');
+            bottomLight.setState('green');
+            leftLight.setState('red');
+            rightLight.setState('red');
+          }, greenTime);
+        }, greenTime * 2);
+      }
+
+      // Crear semáforos para intersección
+      const trafficLights = [];
+
+      for (const [id, intersection] of allIntersectionsRef.current) {
+        if (!["I22", "I21", "I12"].includes(id)) continue;
+        
+        // 4 lados por intersección
+        const topLight = new TrafficLight(intersection, 'top', streetContainer);
+        const bottomLight = new TrafficLight(intersection, 'bottom', streetContainer);
+        const leftLight = new TrafficLight(intersection, 'left', streetContainer);
+        const rightLight = new TrafficLight(intersection, 'right', streetContainer);
+
+        trafficLights.push(topLight, bottomLight, leftLight, rightLight);
+        startSyncedCycle(topLight, bottomLight, leftLight, rightLight, 6000);
+      }
+
       // Creación de carros
       const cars = [];
       for (let i = 1; i < hortBlocks; i++) {
@@ -376,9 +193,10 @@ const TrafficSimulation = () => {
           texture1,
           false,
           { x: 0, y: wHS * i - (halfWidthStreets / 2) },
-          1,
+          -1,
           1 + Math.random()
         );
+        car1.scale.x *= -1;
         carsContainer.addChild(car1);
         cars.push(car1);
 
@@ -387,10 +205,9 @@ const TrafficSimulation = () => {
           texture2,
           false,
           { x: canvasWidth, y: wHS * i + (halfWidthStreets / 2) },
-          -1,
+          1,
           1 + Math.random()
         );
-        car2.scale.x *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
       }
@@ -426,10 +243,6 @@ const TrafficSimulation = () => {
 
       carsRef.current = cars;
 
-      // Cerrar una calle para probar
-      closeStreet("V21", allStreetsRef.current, closedStreetsRef.current);
-
-      // Configurar el game loop
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
 
@@ -508,8 +321,13 @@ const TrafficSimulation = () => {
                 const carBBounds = carB.getBounds();
 
                 if (areRectanglesIntersecting(carBBounds, intersectionBounds)) {
-                  if (!carB.isStopped) {
-                    shouldCarAStop = true;
+                  if (areRectanglesIntersecting(carAFrontSensor, intersectionBounds)){
+                    if (carB.id < carA.id)
+                      shouldCarAStop = true;
+                  } else {
+                    if (!carB.isStopped ) {
+                      shouldCarAStop = true;
+                    }
                   }
                   break;
                 }
@@ -526,6 +344,56 @@ const TrafficSimulation = () => {
 
           if (!carANearIntersection) {
             carA.resume();
+          }
+
+          // Verificar semáforos
+          for (const light of trafficLights) {
+            const stopZone = light.getStopZone();
+
+            // Solo aplica si el auto va en la misma orientación que el semáforo
+            const dir = light.direction;
+            const isVerticalLight = (dir === 'top' || dir === 'bottom');
+            const matchesDirection =
+                (carA.isVertical && isVerticalLight) ||
+                (!carA.isVertical && !isVerticalLight);
+
+            if (!matchesDirection) continue;
+
+            if (light.isRed()) {
+              const carSensor = carA.getBounds();
+
+              if (areRectanglesIntersecting(carSensor, stopZone)) {
+                // Verificamos si el coche ya pasó la intersección
+                const [ix, iy, iw, ih] = light.intersection.dimensions;
+                const carCenter = {
+                  x: carSensor.x + carSensor.width / 2,
+                  y: carSensor.y + carSensor.height / 2
+                };
+
+                let shouldStop = false;
+
+                if (carA.isVertical) {
+                  if (carA.direction === 1 && carCenter.y < iy) {
+                    shouldStop = true; // Va hacia abajo y aún no entra
+                  }
+                  if (carA.direction === -1 && carCenter.y > iy + ih) {
+                    shouldStop = true; // Va hacia arriba y aún no entra
+                  }
+                } else {
+                  if (carA.direction === 1 && carCenter.x < ix) {
+                    shouldStop = true; // Va hacia la derecha y aún no entra
+                  }
+                  if (carA.direction === -1 && carCenter.x > ix + iw) {
+                    shouldStop = true; // Va hacia la izquierda y aún no entra
+                  }
+                }
+
+                if (shouldStop) {
+                  carA.stop();
+                  break;
+                }
+              }
+            }
           }
 
           // Verificación por calle cerrada
@@ -589,12 +457,30 @@ const TrafficSimulation = () => {
 
     initPixiApp();
 
+    setTrafficAPI({ closeStreet, openStreet });
+    
+    const interval = setInterval(() => {
+      // Número de carros
+      const currentNumCars = carsRef.current.length;
+      setNumCars(currentNumCars);
+
+      // Número de calles cerradas
+      const closed = closedStreetsRef.current.size;
+      setCloseStreets(closed);
+
+      // Número de calles abiertas
+      const total = allStreetsRef.current.size;
+      const opened = total - closed;
+      setOpenStreets(opened);
+    }, 500);
+
     return () => {
-        if (appRef.current) {
+      if (appRef.current) {
         appRef.current.destroy(true);
-        }
+      }
+      clearInterval(interval);
     };
-    }, []);
+  }, []);
 
   return <div ref={pixiContainerRef} />;
 };

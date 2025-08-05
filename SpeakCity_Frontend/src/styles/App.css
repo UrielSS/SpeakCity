@@ -174,18 +174,25 @@
 /* Layout para chat y mapa */
 .app-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: 2fr 1fr; /* Chat = 60%, Mapa = 40% */
+  gap: 2rem;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
+
 
 .chat-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  justify-content: flex-start;
+  max-height: 600px; /* O el alto que desees */
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
+
 
 .map-section {
   display: flex;
@@ -218,7 +225,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: top;
   height: 100%;
   color: var(--text-secondary);
   text-align: center;
@@ -247,13 +254,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-.map-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  animation: mapFloat 4s ease-in-out infinite;
-}
-
 
 .dashboard-wrapper {
   width: 100%;
