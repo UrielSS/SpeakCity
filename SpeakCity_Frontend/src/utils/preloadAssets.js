@@ -1,4 +1,3 @@
-// Utils/preloadAssets.js
 import * as PIXI from "pixi.js";
 
 export const preloadAssets = async () => {

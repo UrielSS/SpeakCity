@@ -8,6 +8,8 @@ function ChatBox() {
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [error, setError] = useState('');
+  const [ejecutandoComandos, setEjecutandoComandos] = useState(false);
+  const [comandosEnProceso, setComandosEnProceso] = useState([]);
   const { closeStreet, openStreet } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
@@ -48,55 +50,106 @@ function ChatBox() {
       });
       
       const data = await res.json();
-      console.log(data);
+      console.log('Respuesta del servidor:', data);
 
-         if (data.success && data.response) {
-      const { accion, calle } = data.response;
+      if (data.success && data.response) {
+        // Verificar si es respuesta múltiple o individual
+        if (data.multiple_commands && data.response.comandos) {
+          // MÚLTIPLES COMANDOS
+          setResponse(data.response);
+          await ejecutarComandosSecuencialmente(data.response.comandos);
+          mostrarNotificacionMultiple(data.response);
+        } else {
+          // COMANDO INDIVIDUAL
+          const comando = data.response;
+          aplicarComandoIndividual(comando);
+          setResponse(comando);
+          mostrarNotificacionComando(comando);
+        }
 
-      // Aplicar comandos al sistema de tráfico
-      if (
-        accion === 'cerrar_calle' ||
-        accion === 'bloquear_via' ||
-        accion === 'cerrar_cruce'
-      ) {
-        closeStreet(calle);
-      } else if (
-        accion === 'abrir_calle' ||
-        accion === 'desbloquear_via' ||
-        accion === 'abrir_cruce'
-      ) {
-        openStreet(calle);
-      }
+        if (data.demo_mode) {
+          setBackendStatus('demo');
+        } else {
+          setBackendStatus('connected');
+        }
 
-      setResponse(data.response);
-      mostrarNotificacionComando(data.response);
-
-      if (data.demo_mode) {
-        setBackendStatus('demo');
       } else {
+        // Comando inválido
+        setError(data.error || 'El mensaje no fue entendido como comando de tráfico.');
+        if (data.suggestion) {
+          setError(prev => `${prev}\n\n💡 ${data.suggestion}`);
+        }
         setBackendStatus('connected');
       }
 
-    } else {
-      // ⚠️ Comando inválido pero no es error de red
-      setError(data.error || 'El mensaje no fue entendido como comando de tráfico.');
-      if (data.suggestion) {
-        setError(prev => `${prev}\n\n💡 ${data.suggestion}`);
-      }
-      setBackendStatus('connected');
+    } catch (error) {
+      setError(`Error de conexión: ${error.message}`);
+      setBackendStatus('error');
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    // ❌ Error real de conexión
-    setError(`Error de conexión: ${error.message}`);
-    setBackendStatus('error');
-  } finally {
-    setLoading(false);
-  }
   };
 
+  // Función para aplicar un comando individual(Aca puede ir lo de los semaforos tambien y lo de desviar trafico)
+  const aplicarComandoIndividual = (comando) => {
+    const { accion, calle } = comando;
+
+    if (
+      accion === 'cerrar_calle' ||
+      accion === 'bloquear_via' ||
+      accion === 'cerrar_cruce'
+    ) {
+      closeStreet(calle);
+    } else if (
+      accion === 'abrir_calle' ||
+      accion === 'desbloquear_via' ||
+      accion === 'abrir_cruce'
+    ) {
+      openStreet(calle);
+    }
+  };
+
+  // Nueva función para ejecutar múltiples comandos secuencialmente
+  const ejecutarComandosSecuencialmente = async (comandos) => {
+    setEjecutandoComandos(true);
+    setComandosEnProceso([]);
+
+    for (let i = 0; i < comandos.length; i++) {
+      const comando = comandos[i];
+      
+      // Actualizar estado de comandos en proceso
+      setComandosEnProceso(prev => [
+        ...prev.map(cmd => ({ ...cmd, estado: 'completado' })),
+        { ...comando, estado: 'ejecutando', indice: i }
+      ]);
+
+      // Aplicar el comando al sistema
+      aplicarComandoIndividual(comando);
+
+      // Mostrar notificación individual
+      mostrarNotificacionComandoSecuencial(comando, i + 1, comandos.length);
+
+      // Pausa entre comandos para visualización
+      if (i < comandos.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    }
+
+    // Marcar todos como completados
+    setComandosEnProceso(prev => 
+      prev.map(cmd => ({ ...cmd, estado: 'completado' }))
+    );
+
+    setEjecutandoComandos(false);
+    
+    // Limpiar
+    setTimeout(() => {
+      setComandosEnProceso([]);
+    }, 3000);
+  };
+
+  // Notificación para comando individual (lógica original)
   const mostrarNotificacionComando = (comando) => {
-    // Crear una notificación visual del comando procesado
     const notificacion = document.createElement('div');
     notificacion.className = 'comando-notificacion';
     notificacion.innerHTML = `
@@ -109,8 +162,49 @@ function ChatBox() {
       </div>
     `;
     
-    // Agregar estilos
-    notificacion.style.cssText = `
+    mostrarNotificacionTemporal(notificacion);
+  };
+
+  // Nueva notificación para múltiples comandos
+  const mostrarNotificacionMultiple = (respuesta) => {
+    const notificacion = document.createElement('div');
+    notificacion.className = 'comando-notificacion multiple';
+    notificacion.innerHTML = `
+      <div class="notificacion-contenido">
+        <h4>🚦 Múltiples Comandos Ejecutados</h4>
+        <p><strong>Total:</strong> ${respuesta.total_comandos} comandos</p>
+        <p><strong>Resumen:</strong> ${respuesta.resumen_general}</p>
+        <div class="comandos-lista">
+          ${respuesta.orden_ejecucion.map(orden => `<div class="comando-item">• ${orden}</div>`).join('')}
+        </div>
+      </div>
+    `;
+    
+    mostrarNotificacionTemporal(notificacion, 8000);
+  };
+
+  // Notificación secuencial durante la ejecución
+  const mostrarNotificacionComandoSecuencial = (comando, numero, total) => {
+    const notificacion = document.createElement('div');
+    notificacion.className = 'comando-notificacion secuencial';
+    notificacion.innerHTML = `
+      <div class="notificacion-contenido">
+        <h4>Ejecutando ${numero}/${total}</h4>
+        <p><strong>Acción:</strong> ${comando.accion}</p>
+        <p><strong>Calle:</strong> ${comando.calle}</p>
+        <p><strong>Prioridad:</strong> ${comando.prioridad}</p>
+      </div>
+    `;
+    
+    // Posición diferente para notificaciones secuenciales
+    notificacion.style.top = `${85 + (numero * 10)}px`;
+    
+    mostrarNotificacionTemporal(notificacion, 3000);
+  };
+
+  // Función auxiliar para mostrar notificaciones temporales
+  const mostrarNotificacionTemporal = (notificacion, duracion = 6000) => {
+    notificacion.style.cssText += `
       position: fixed;
       top: 65px;
       right: 20px;
@@ -125,36 +219,56 @@ function ChatBox() {
     `;
     
     // Agregar animación CSS
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
+    if (!document.getElementById('notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'notification-styles';
+      style.textContent = `
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
-        to {
-          transform: translateX(0);
-          opacity: 1;
+        .comando-notificacion.multiple {
+          background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
-      }
-    `;
-    document.head.appendChild(style);
+        .comando-notificacion.secuencial {
+          background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+          max-width: 300px;
+          padding: 10px;
+        }
+        .comandos-lista {
+          margin-top: 10px;
+          font-size: 0.9em;
+        }
+        .comando-item {
+          margin: 2px 0;
+          opacity: 0.9;
+        }
+      `;
+      document.head.appendChild(style);
+    }
     
     document.body.appendChild(notificacion);
     
-    // Remover la notificación después de 4 segundos
+    // Remover la notificación
     setTimeout(() => {
       notificacion.style.animation = 'slideOut 0.5s ease-in';
       notificacion.style.transform = 'translateX(100%)';
       notificacion.style.opacity = '0';
       setTimeout(() => {
-        document.body.removeChild(notificacion);
+        if (document.body.contains(notificacion)) {
+          document.body.removeChild(notificacion);
+        }
       }, 500);
-    }, 6000);
+    }, duracion);
   };
 
   const handleKeyPress = (e) => {
-    // Enviar con Enter (pero no con Shift+Enter para permitir saltos de línea)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -163,7 +277,6 @@ function ChatBox() {
 
   const handleExampleClick = (example) => {
     setMessage(example);
-    // Opcional: hacer focus en el textarea
     const textarea = document.querySelector('.chat-input');
     if (textarea) {
       textarea.focus();
@@ -185,11 +298,14 @@ function ChatBox() {
 
   const statusInfo = getStatusMessage();
 
-  // Lista de ejemplos
+  // Lista ampliada de ejemplos para múltiples comandos
   const examples = [
     "Cierra la calle H20 por mantenimiento",
-    "Acaba de haber un choque en la calle V11, bloque el paso",
-    "La calle V32 se acaba de inundar"
+    "Cierra de inmediato las calles H21, V21 y H22 por un supuesto accidente. Acto seguido, extiende la zona de restricción cerrando también V22 y H23 como medida preventiva, esto ya con menor prioridad",
+    // "La calle V32 se acaba de inundar",
+    // "Accidente en V11: cierra la calle, reporta incidente y redirige tráfico por V12",
+    // "Emergencia en H20: bloquea vía, cambia semáforo en H21 y activa protocolo de emergencia",
+    // "Construcción en V23: cierra calle, reduce velocidad en V22 y programa semáforo en H13"
   ];
 
   return (
@@ -205,6 +321,23 @@ function ChatBox() {
           </span>
         )}
       </div>
+
+      {/* Indicador de comandos en ejecución */}
+      {ejecutandoComandos && (
+        <div className="ejecucion-status">
+          <div className="ejecucion-indicator">
+            ⚡ Ejecutando comandos secuencialmente...
+          </div>
+          <div className="comandos-progreso">
+            {comandosEnProceso.map((cmd, index) => (
+              <div key={index} className={`comando-progreso ${cmd.estado}`}>
+                {cmd.estado === 'ejecutando' ? '🔄 ' : '✅ '} 
+                {cmd.accion} en {cmd.calle}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="chat-form">
         <div className="input-group">
@@ -212,17 +345,17 @@ function ChatBox() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ejemplo: cierra la calle V1 por congestión... (Presiona Enter para enviar)"
+            placeholder="Ejemplo: cierra calle V11 por accidente y cambia semáforo en H12... (Presiona Enter para enviar)"
             className="chat-input"
             rows="3"
-            disabled={loading || backendStatus === 'error'}
+            disabled={loading || backendStatus === 'error' || ejecutandoComandos}
           />
           <button
             type="submit"
             className="chat-button"
-            disabled={loading || !message.trim() || backendStatus === 'error'}
+            disabled={loading || !message.trim() || backendStatus === 'error' || ejecutandoComandos}
           >
-            {loading ? 'Procesando...' : 'Enviar Comando'}
+            {loading ? 'Procesando...' : ejecutandoComandos ? 'Ejecutando...' : 'Enviar Comando'}
           </button>
         </div>
       </form>
@@ -239,7 +372,38 @@ function ChatBox() {
         </div>
       )}
 
-      {/* Respuesta del sistema */}
+      {/* Respuesta del sistema
+      {response && !ejecutandoComandos && (
+        <div className="response-container">
+          <h3>📋 Última Respuesta:</h3>
+          {response.comandos ? (
+            // Respuesta múltiple
+            <div className="multiple-response">
+              <p><strong>Total de comandos:</strong> {response.total_comandos}</p>
+              <p><strong>Resumen:</strong> {response.resumen_general}</p>
+              <div className="comandos-detalle">
+                <h4>Comandos ejecutados:</h4>
+                {response.comandos.map((cmd, index) => (
+                  <div key={index} className="comando-detalle">
+                    <strong>{index + 1}.</strong> {cmd.accion} en {cmd.calle} 
+                    <span className="comando-meta">
+                      (Causa: {cmd.causa}, Prioridad: {cmd.prioridad})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Respuesta individual
+            <div className="single-response">
+              <p><strong>Acción:</strong> {response.accion}</p>
+              <p><strong>Calle:</strong> {response.calle}</p>
+              <p><strong>Causa:</strong> {response.causa}</p>
+              <p><strong>Prioridad:</strong> {response.prioridad}</p>
+            </div>
+          )}
+        </div>
+      )} */}
 
       {/* Ejemplos de comandos */}
       <div className="examples-container">

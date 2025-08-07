@@ -272,6 +272,66 @@
   transform: translateY(-1px);
 }
 
+.ejecucion-status {
+  background: #FFF3CD;
+  border: 1px solid #FFEAA7;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+.ejecucion-indicator {
+  font-weight: bold;
+  color: #856404;
+  margin-bottom: 10px;
+}
+
+.comandos-progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.comando-progreso {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.comando-progreso.ejecutando {
+  background: #FFE082;
+  color: #F57F17;
+}
+
+.comando-progreso.completado {
+  background: #C8E6C9;
+  color: #2E7D32;
+}
+
+.multiple-response {
+  background: #E8F5E8;
+  border-left: 4px solid #4CAF50;
+  padding: 15px;
+}
+
+.comandos-detalle {
+  margin-top: 15px;
+}
+
+.comando-detalle {
+  background: white;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 4px;
+  border-left: 3px solid #2196F3;
+}
+
+.comando-meta {
+  font-size: 0.8em;
+  color: #666;
+  display: block;
+  margin-top: 5px;
+}
 /* Responsive design */
 @media (max-width: 768px) {
   .chat-container {
