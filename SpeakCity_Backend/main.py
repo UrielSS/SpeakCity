@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, validator
 import os
 import re
 import logging
+import json
 from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional, Dict, Any, List
@@ -32,7 +33,8 @@ else:
 
 # Definición de acciones, causas y calles válidas (Diccionarios)
 ACCIONES_VALIDAS = {
-    'semaforo': ['cambiar_semaforo', 'activar_semaforo', 'desactivar_semaforo', 'programar_semaforo'],
+    'semaforo': ['cambiar_semaforo_rojo', 'cambiar_semaforo_verde', 'activar_semaforo', 'desactivar_semaforo', 
+                    'programar_semaforo'],
     'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
@@ -47,12 +49,19 @@ CAUSAS_VALIDAS = [
 CALLES_VALIDAS = ['H10', 'H11', 'H12', 'H13', 'H20', 'H21', 'H22', 'H23', 'H30', 'H31', 'H32', 'H33',
                     'V10', 'V11', 'V12', 'V13', 'V20', 'V21', 'V22', 'V23', 'V30', 'V31', 'V32', 'V33']
 
+SEMAFOROS_VALIDOS = [
+                    'I22 top', 'I22 right', 'I22 bottom', 'I22 left',
+                    'I21 top', 'I21 right', 'I21 bottom', 'I21 left',
+                    'I12 top', 'I12 right', 'I12 bottom', 'I12 left'
+                    ]
+
 class ComandoTrafico(BaseModel):
     accion: str = Field(..., description="Acción específica a realizar en el sistema de tráfico")
     calle: str = Field(..., description="Nombre de la calle o intersección donde aplicar la acción")
     causa: str = Field(..., description="Motivo o causa que justifica la acción")
     prioridad: Optional[str] = Field(default="media", description="Prioridad del comando: baja, media, alta, critica")
     duracion_estimada: Optional[int] = Field(default=None, description="Duración estimada en minutos")
+    duracion_estimada_segundos: Optional[int] = Field(default=None, description="Duración estimada del intervalo de cambio del semaforo en segundos")
     orden_ejecucion: Optional[int] = Field(default=1, description="Orden de ejecución del comando")
 
     @validator('accion')
@@ -66,7 +75,7 @@ class ComandoTrafico(BaseModel):
     @validator('calle')
     def validar_calle(cls, v):
         v = v.strip().upper()
-        if v not in CALLES_VALIDAS:
+        if not (v in CALLES_VALIDAS or v in [s.upper() for s in SEMAFOROS_VALIDOS]):
             raise ValueError(f"Calle '{v}' no válida. Usa calles como V1–V4 o H1–H3.")
         return v
 
@@ -122,7 +131,7 @@ IMPORTANTE:
 - Cada comando debe ser independiente y específico
 
 COMANDOS VÁLIDOS:
-1. SEMÁFOROS: cambiar_semaforo, activar_semaforo, desactivar_semaforo, programar_semaforo
+1. SEMÁFOROS: {ACCIONES_VALIDAS['semaforo']}
 2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo  
 3. INCIDENTES: reportar_incidente, limpiar_incidente, bloquear_via, desbloquear_via
 4. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
@@ -130,6 +139,7 @@ COMANDOS VÁLIDOS:
 
 CAUSAS VÁLIDAS: {CAUSAS_VALIDAS}
 CALLES PERMITIDAS: {CALLES_VALIDAS}
+SEMAFOROS VALIDOS: {SEMAFOROS_VALIDOS}
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
@@ -299,12 +309,19 @@ def chat():
                     "max_output_tokens": 800  # Aumentado para múltiples comandos
                 }
             )
-
+            print('eeee')
+            print(f'Response Antes de parsed: {response}')
+            print(f'Response parsed: {response.parsed}')
             respuesta: RespuestaMultipleComandos = response.parsed
-
+            if respuesta is None:
+                content_json = response.candidates[0].content.parts[0].text
+                data = json.loads(content_json)
+                respuesta = RespuestaMultipleComandos(**data)
+            print(f'Final Respuesta: {respuesta}')
+            
         # Validar y ordenar comandos
         comandos_procesados = validar_y_ordenar_comandos(respuesta.comandos)
-        
+
         if not comandos_procesados:
             return jsonify({
                 'error': 'No se identificaron comandos válidos de tráfico',

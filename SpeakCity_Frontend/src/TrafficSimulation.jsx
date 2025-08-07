@@ -24,6 +24,8 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
   const allStreetsRef = useRef(new Map());
   const allIntersectionsRef = useRef(new Map());
   const closedStreetsRef = useRef(new Map());
+  const trafficLights = [];
+  const trafficLights_deactivated = [];
 
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
@@ -44,6 +46,64 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
       }
     }
   };
+
+  const changeTrafficLight_red = (nameTrafficLight) => {
+    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+    trafficLightModify.setState('red');
+    trafficLightModify.stopTimer();
+  };
+
+  const changeTrafficLight_green = (nameTrafficLight) => {
+    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+    trafficLightModify.setState('green');
+    trafficLightModify.stopTimer();
+  };
+
+  const deactivateTrafficLight = (nameTrafficLight) => {
+    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+    const index = trafficLights.indexOf(trafficLightModify);
+    if (index !== -1) {
+      trafficLights.splice(index, 1);
+      trafficLights_deactivated.push(trafficLightModify);
+      trafficLightModify.deactivate();
+    }
+  };
+
+  const activateTrafficLight = (nameTrafficLight) => {
+    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights_deactivated);
+    const index = trafficLights_deactivated.indexOf(trafficLightModify);
+    if (index !== -1) {
+      trafficLights_deactivated.splice(index, 1);
+      trafficLights.push(trafficLightModify);
+      trafficLightModify.activate();
+    }
+  };
+
+  const changeTrafficLightTimeInterval = (nameTrafficLight, durationChangeSeconds) => {
+    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+    if (trafficLightModify !== null) {
+      trafficLightModify.startTimer(durationChangeSeconds * 1000);
+    }
+  }
+
+  const getObjectTrafficLight = (nameTrafficLight, arrayTrafficLigths) => {
+    let arrayName = nameTrafficLight.split(" ");
+    let intersection = arrayName[0];
+    let direction = arrayName[1];
+
+    let trafficLightModify = null;
+    for(let i=0; i < arrayTrafficLigths.length; i++) {
+      let trafficLight = arrayTrafficLigths[i];
+      if (trafficLight.direction.toUpperCase() == direction && trafficLight.intersection.id == intersection) {
+        trafficLightModify = trafficLight;
+        break
+      }
+    }
+    return trafficLightModify;
+  };
+
+  
+
 
   useEffect(() => {
     const initPixiApp = async () => {
@@ -102,33 +162,6 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
       setComplex(blockContainer);
 
-      function startSyncedCycle(topLight, bottomLight, leftLight, rightLight, greenTime = 6000) {
-        // Fase inicial: vertical en verde
-        topLight.setState('green');
-        bottomLight.setState('green');
-        leftLight.setState('red');
-        rightLight.setState('red');
-
-        setInterval(() => {
-          // Fase horizontal verde
-          topLight.setState('red');
-          bottomLight.setState('red');
-          leftLight.setState('green');
-          rightLight.setState('green');
-
-          setTimeout(() => {
-            // Fase vertical verde
-            topLight.setState('green');
-            bottomLight.setState('green');
-            leftLight.setState('red');
-            rightLight.setState('red');
-          }, greenTime);
-        }, greenTime * 2);
-      }
-
-      // Crear semáforos para intersección
-      const trafficLights = [];
-
       for (const [id, intersection] of allIntersectionsRef.current) {
         if (!["I22", "I21", "I12"].includes(id)) continue;
         
@@ -140,13 +173,17 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
         trafficLights.push(topLight, bottomLight, leftLight, rightLight);
 
-        // Configurar tiempos
-        topLight.startTimer(6000);
-        bottomLight.startTimer(6000);
-        leftLight.startTimer(6000);
-        rightLight.startTimer(6000);
+        const semaforos = [
+          { light: topLight, initial: 'green' },
+          { light: bottomLight, initial: 'green' },
+          { light: leftLight, initial: 'red' },
+          { light: rightLight, initial: 'red' }
+        ];
 
-        startSyncedCycle(topLight, bottomLight, leftLight, rightLight, 6000);
+        for (const { light, initial } of semaforos) {
+          light.setState(initial);
+          light.startTimer();
+        }
       }
 
       // Creación de carros
@@ -425,7 +462,8 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
     initPixiApp();
 
-    setTrafficAPI({ closeStreet, openStreet });
+    setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
+                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval });
     
     const interval = setInterval(() => {
       // Número de carros

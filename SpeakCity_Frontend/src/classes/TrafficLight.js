@@ -51,11 +51,13 @@ export class TrafficLight {
   }
 
   startTimer(interval = 6000) {
+    this.stopTimer();
     this.timer = setInterval(() => this.toggle(), interval);
   }
 
   stopTimer() {
     clearInterval(this.timer);
+    this.timer = null;
   }
 
   isRed() {
@@ -77,4 +79,17 @@ export class TrafficLight {
         return new PIXI.Rectangle(x + w, y, margin, h);
     }
   }
+
+  deactivate() {
+    this.stopTimer();
+    this.circle.clear();
+    this.state = null;
+    //this.setState('green');
+  }
+
+  activate() {
+    this.setState('green');
+    this.startTimer();
+  }
+
 }

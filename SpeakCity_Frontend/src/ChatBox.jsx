@@ -10,7 +10,9 @@ function ChatBox() {
   const [error, setError] = useState('');
   const [ejecutandoComandos, setEjecutandoComandos] = useState(false);
   const [comandosEnProceso, setComandosEnProceso] = useState([]);
-  const { closeStreet, openStreet } = useContext(TrafficContext);
+  const { closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
+          deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval
+   } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
   useEffect(() => {
@@ -92,7 +94,7 @@ function ChatBox() {
 
   // Función para aplicar un comando individual(Aca puede ir lo de los semaforos tambien y lo de desviar trafico)
   const aplicarComandoIndividual = (comando) => {
-    const { accion, calle } = comando;
+    const { accion, calle, causa, duracion_estimada, duracion_estimada_segundos } = comando;
 
     if (
       accion === 'cerrar_calle' ||
@@ -106,7 +108,19 @@ function ChatBox() {
       accion === 'abrir_cruce'
     ) {
       openStreet(calle);
+    } else if (accion == 'cambiar_semaforo_rojo') {
+      changeTrafficLight_red(calle);
+    } else if (accion == 'cambiar_semaforo_verde') {
+      changeTrafficLight_green(calle);
+    } else if (accion == 'desactivar_semaforo') {
+      deactivateTrafficLight(calle);
+    } else if (accion == 'activar_semaforo') {
+      activateTrafficLight(calle);
+    } else if (accion == 'programar_semaforo') {
+      changeTrafficLightTimeInterval(calle, duracion_estimada_segundos);
     }
+
+
   };
 
   // Nueva función para ejecutar múltiples comandos secuencialmente
