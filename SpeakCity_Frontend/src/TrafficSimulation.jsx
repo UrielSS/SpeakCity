@@ -165,8 +165,8 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
       setNameStreets(allStreetsRef.current, labelContainer);
 
       // Asignar calles conectadas a las intersecciones
-      for (let i = 0; i < hortBlocks; i++) {
-        for (let j = 0; j < vertBlocks; j++) {
+      for (let i = 0; i <= hortBlocks; i++) {
+        for (let j = 0; j <= vertBlocks; j++) {
           const intersectionId = "I" + i + j;
           const intersection = allIntersectionsRef.current.get(intersectionId);
           if (intersection) {
@@ -177,7 +177,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
               'right': allStreetsRef.current.get("H" + i + j)
             };
           }
-          //console.log(intersection);
+          console.log(intersection);
         }
       }
 
