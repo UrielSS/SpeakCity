@@ -6,8 +6,7 @@ import { preloadAssets } from "./Utils/preloadAssets";
 import { 
   areRectanglesIntersecting, 
   drawStreets, 
-  drawIntersections, 
-  drawPerimeterIntersections,
+  drawIntersections,
   setComplex, 
   setNameStreets 
 } from "./utils/utils";
@@ -163,12 +162,11 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
 
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
-      drawPerimeterIntersections(intersectionContainer, allIntersectionsRef.current);
       setNameStreets(allStreetsRef.current, labelContainer);
 
       // Asignar calles conectadas a las intersecciones
-      for (let i = 1; i < hortBlocks; i++) {
-        for (let j = 1; j < vertBlocks; j++) {
+      for (let i = 0; i < hortBlocks; i++) {
+        for (let j = 0; j < vertBlocks; j++) {
           const intersectionId = "I" + i + j;
           const intersection = allIntersectionsRef.current.get(intersectionId);
           if (intersection) {
@@ -179,6 +177,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
               'right': allStreetsRef.current.get("H" + i + j)
             };
           }
+          //console.log(intersection);
         }
       }
 
@@ -218,9 +217,9 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
         const car1 = new Car(
           texture1,
           false,
-          { x: 0, y: wHS * i - (halfWidthStreets / 2) },
+          { x: 0, y: wHS * i + halfWidthStreets / 2 },
           1,
-          1 + Math.random()
+          Math.random()*1.5 +0.5
         );
         //Asignación de calle inicial
         car1.currentStreet = allStreetsRef.current.get("H"+ i + "0");
@@ -233,9 +232,9 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
         const car2 = new Car(
           texture2,
           false,
-          { x: canvasWidth, y: wHS * i + (halfWidthStreets / 2) },
+          { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets/2 },
           -1,
-          1 + Math.random()
+          Math.random()*1.5
         );
         //Asignación de calle inicial
         car2.currentStreet = allStreetsRef.current.get("H"+ i + (hortBlocks-1));
@@ -256,14 +255,14 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
         const car1 = new Car(
           texture1,
           true,
-          { x: wVS * i - (halfWidthStreets / 2), y: 0 },
+          { x: wVS * i + halfWidthStreets + halfWidthStreets/2, y: 0 },
           1,
-          1 + Math.random()
+          1 + Math.random()*1.2
         );
         //Asignación de calle inicial
         car1.currentStreet = allStreetsRef.current.get("V"+ i + "0");
         car1.nextStreet = car1.currentStreet;
-        console.log("V"+ i + "0  " + car1.currentStreet+ "   next: " + car1.nextStreet);
+        //console.log("V"+ i + "0  " + car1.currentStreet+ "   next: " + car1.nextStreet);
         
         carsContainer.addChild(car1);
         cars.push(car1);
@@ -272,14 +271,14 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
         const car2 = new Car(
           texture2,
           true,
-          { x: wVS * i + (halfWidthStreets / 2), y: canvasHeight },
+          { x: wVS * i + halfWidthStreets - halfWidthStreets/2, y: canvasHeight },
           -1,
           1 + Math.random()
         );
         //Asignación de calle inicial
         car2.currentStreet = allStreetsRef.current.get("V"+ i + (vertBlocks-1));
         car2.nextStreet = car2.currentStreet;
-        console.log("V"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
+        //console.log("V"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
         
         car2.scale.y *= -1;
         carsContainer.addChild(car2);

@@ -21,76 +21,56 @@ export const sleep = (ms) => {
 
 export const drawStreets = (container, streetsMap) => {
   // Calles horizontales
-  for (let i = 1; i < hortBlocks; i++) {
+  for (let i = 0; i <= hortBlocks; i++) {
     for (let j = 0; j < vertBlocks; j++) {
-      let streetDimension = [j * wVS, wHS * i - halfWidthStreets, wVS, 2 * halfWidthStreets];
+      let streetDimension = [j * wVS+halfWidthStreets, wHS * i , wVS , 2 * halfWidthStreets];
       const streetId = "H" + i + j;
       const street = new Street(streetId, streetDimension, 'horizontal', container);
       streetsMap.set(streetId, street);
     }
   }
 
-  // Calles verticales
-  for (let i = 1; i < vertBlocks; i++) {
+  // // Calles verticales
+  for (let i = 0; i <= vertBlocks; i++) {
     for (let j = 0; j < hortBlocks; j++) {
-      let streetDimension = [wVS * i - halfWidthStreets, j * wHS, 2 * halfWidthStreets, wHS];
+      let streetDimension = [wVS * i , j * wHS+halfWidthStreets, 2 * halfWidthStreets, wHS];
       const streetId = "V" + i + j;
       const street = new Street(streetId, streetDimension, 'vertical', container);
       streetsMap.set(streetId, street);
     }
   }
   
-  // Calles perimetrales
-  let topStreet = new Street("H_top", 
-    [2 * halfWidthStreets, 0, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
-    'horizontal', container);
-  streetsMap.set("H_top", topStreet);
+  // // Calles perimetrales
+  // let topStreet = new Street("H_top", 
+  //   [2 * halfWidthStreets, 0, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
+  //   'horizontal', container);
+  // streetsMap.set("H_top", topStreet);
 
-  let bottomStreet = new Street("H_bottom", 
-    [2 * halfWidthStreets, canvasHeight - 2 * halfWidthStreets, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
-    'horizontal', container);
-  streetsMap.set("H_bottom", bottomStreet);
+  // let bottomStreet = new Street("H_bottom", 
+  //   [2 * halfWidthStreets, canvasHeight - 2 * halfWidthStreets, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
+  //   'horizontal', container);
+  // streetsMap.set("H_bottom", bottomStreet);
 
-  let leftStreet = new Street("V_left", 
-    [0, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
-    'vertical', container);
-  streetsMap.set("V_left", leftStreet);
+  // let leftStreet = new Street("V_left", 
+  //   [0, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
+  //   'vertical', container);
+  // streetsMap.set("V_left", leftStreet);
 
-  let rightStreet = new Street("V_right", 
-    [canvasWidth - 2 * halfWidthStreets, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
-    'vertical', container);
-  streetsMap.set("V_right", rightStreet);
+  // let rightStreet = new Street("V_right", 
+  //   [canvasWidth - 2 * halfWidthStreets, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
+  //   'vertical', container);
+  // streetsMap.set("V_right", rightStreet);
 };
 
 export const drawIntersections = (container, intersectionsMap) => {
-  for (let i = 1; i < hortBlocks; i++) {
-    for (let j = 1; j < vertBlocks; j++) {
-      let intersectionDimension = [j * wVS - halfWidthStreets, wHS * i - halfWidthStreets, 2 * halfWidthStreets, 2 * halfWidthStreets];
+  for (let i = 0; i <= hortBlocks; i++) {
+    for (let j = 0; j <= vertBlocks; j++) {
+      let intersectionDimension = [j * wVS , wHS * i, 2 * halfWidthStreets, 2 * halfWidthStreets];
       const intersectionId = "I" + i + j;
       const intersection = new Intersection(intersectionId, intersectionDimension, container);
       intersectionsMap.set(intersectionId, intersection);
     }
   }
-};
-
-export const drawPerimeterIntersections = (container, intersectionsMap) => {
-  const size = 2 * halfWidthStreets;
-  
-  // Esquina superior izquierda
-  let iTopLeft = new Intersection("I_top_left", [0, 0, size, size], container);
-  intersectionsMap.set("I_top_left", iTopLeft);
-
-  // Esquina superior derecha
-  let iTopRight = new Intersection("I_top_right", [canvasWidth - size, 0, size, size], container);
-  intersectionsMap.set("I_top_right", iTopRight);
-  
-  // Esquina inferior izquierda
-  let iBottomLeft = new Intersection("I_bottom_left", [0, canvasHeight - size, size, size], container);
-  intersectionsMap.set("I_bottom_left", iBottomLeft);
-  
-  // Esquina inferior derecha
-  let iBottomRight = new Intersection("I_bottom_right", [canvasWidth - size, canvasHeight - size, size, size], container);
-  intersectionsMap.set("I_bottom_right", iBottomRight);
 };
 
 export const setComplex = (container) => {
