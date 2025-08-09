@@ -250,6 +250,7 @@ def hello_world():
         'features': ['single_command', 'multiple_commands', 'priority_ordering']
     })
 
+
 @app.route('/api/status')
 def status():
     """Endpoint para verificar el estado del sistema"""
@@ -260,6 +261,7 @@ def status():
         'api_configured': not DEMO_MODE,
         'max_commands_per_request': 10
     })
+
 
 @app.route('/api/chat', methods=['POST'])
 def chat():

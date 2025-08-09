@@ -424,7 +424,7 @@ function ChatBox() {
         <h4>💡 Ejemplos de comandos (click para usar):</h4>
         <ul className="examples-list">
           {examples.map((example, index) => (
-            <li 
+            <li
               key={index}
               onClick={() => handleExampleClick(example)}
               className="example-item"
