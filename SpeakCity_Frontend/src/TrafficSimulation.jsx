@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
-import { Car } from "./Classes/Car";
+import { Car } from "./classes/Car";
 import { TrafficLight } from "./Classes/TrafficLight";
 import { preloadAssets } from "./Utils/preloadAssets";
 import { 
@@ -13,9 +13,9 @@ import {
 } from "./utils/utils";
 import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
 
-const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
- 
- const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
+  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
+
+  const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
   const { wVS, wHS } = CALCULATED_VALUES;
 
   const pixiContainerRef = useRef(null);
@@ -106,6 +106,28 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
 
   useEffect(() => {
+    //Función para decidir la dirección del coche
+    function decideNextStreet(car, intersection, closedStreetsRef) {
+      const possibleDirections = [];
+
+      const { top, bottom, left, right } = intersection.connectedStreets;
+
+      // Solo agrega calles que existen y no están cerradas
+      if (top && !closedStreetsRef.current.has(top.name)) possibleDirections.push(top);
+      if (bottom && !closedStreetsRef.current.has(bottom.name)) possibleDirections.push(bottom);
+      if (left && !closedStreetsRef.current.has(left.name)) possibleDirections.push(left);
+      if (right && !closedStreetsRef.current.has(right.name)) possibleDirections.push(right);
+
+      // Elimina la calle actual para evitar volver atrás
+      const filtered = possibleDirections.filter(s => s !== car.currentStreet);
+
+      if (filtered.length === 0) return car.currentStreet; // Si no hay otra opción, seguir
+
+      // Elegir una calle al azar
+      const nextStreet = filtered[Math.floor(Math.random() * filtered.length)];
+      return nextStreet;
+    }
+
     const initPixiApp = async () => {
       await preloadAssets(); // ¡AQUÍ ESTABA EL ERROR! Llamabas preloadElements() en lugar de preloadAssets()
 
@@ -200,6 +222,10 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           1,
           1 + Math.random()
         );
+        //Asignación de calle inicial
+        car1.currentStreet = allStreetsRef.current.get("H"+ i + "0");
+        car1.nextStreet = car1.currentStreet;
+        //console.log("H"+ i + "0 " + car1.currentStreet+ "   next: " + car1.nextStreet);
         carsContainer.addChild(car1);
         cars.push(car1);
 
@@ -211,13 +237,18 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           -1,
           1 + Math.random()
         );
+        //Asignación de calle inicial
+        car2.currentStreet = allStreetsRef.current.get("H"+ i + (hortBlocks-1));
+        car2.nextStreet = car2.currentStreet;
+        //console.log("H"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
+        
         car2.scale.x *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
       }
 
       // Crear carros para calles verticales
-      for (let i = 1; i < vertBlocks; i++) {
+      for (let i = 1; i < vertBlocks; i++) { //vertBlocks
         const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
         const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
 
@@ -229,6 +260,11 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           1,
           1 + Math.random()
         );
+        //Asignación de calle inicial
+        car1.currentStreet = allStreetsRef.current.get("V"+ i + "0");
+        car1.nextStreet = car1.currentStreet;
+        console.log("V"+ i + "0  " + car1.currentStreet+ "   next: " + car1.nextStreet);
+        
         carsContainer.addChild(car1);
         cars.push(car1);
 
@@ -240,6 +276,11 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           -1,
           1 + Math.random()
         );
+        //Asignación de calle inicial
+        car2.currentStreet = allStreetsRef.current.get("V"+ i + (vertBlocks-1));
+        car2.nextStreet = car2.currentStreet;
+        console.log("V"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
+        
         car2.scale.y *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
@@ -252,9 +293,9 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
         const deltaTime = time.deltaTime;
 
         // Mover todos los carros
-        for (const car of carsRef.current) {
-          car.update(deltaTime, app.screen);
-        }
+        // for (const car of carsRef.current) {
+        //   car.update(deltaTime, app.screen);
+        // }
 
         // Detección de colisiones
         for (let i = 0; i < carsRef.current.length; i++) {
@@ -456,13 +497,58 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
               }
             }
           }
+
+          // Lógica de cambio de calle/intersección
+          let isInIntersection = false;
+
+          //
+          for (const [id, intersection] of allIntersectionsRef.current) {
+            const intersectionBounds = new PIXI.Rectangle(
+              intersection.dimensions[0]- 2,
+              intersection.dimensions[1] - 2,
+              intersection.dimensions[2] + 4,
+              intersection.dimensions[3] + 4
+            );
+
+            if (areRectanglesIntersecting(carA.getBounds(), intersectionBounds)) {
+              isInIntersection = true;
+
+              if (!carA.hasChangedDirection) {
+                let nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+
+                if (closedStreetsRef.current.get(nextStreet.id)) {
+                  // Reintentar si la primera opción está cerrada
+                  nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+                }
+
+                if (/*nextStreet && */nextStreet !== carA.currentStreet) {
+                  carA.nextStreet = nextStreet;
+                  carA.setDirectionBasedOnStreet(nextStreet);
+                  carA.hasChangedDirection = true;
+                } else {
+                  // Si no hay otra calle, seguir en la actual
+                  carA.nextStreet = carA.currentStreet;
+                  carA.setDirectionBasedOnStreet(carA.currentStreet);
+                }
+              }
+              break;
+            }
+          }
+
+          if (!isInIntersection && carA.hasChangedDirection && carA.nextStreet) {
+            carA.currentStreet = carA.nextStreet;
+            carA.hasChangedDirection = false;
+          }
+
+          //Al final, actualiza la posición del coche según las decisiones tomadas a partir de los elementos del mapa
+          carA.update(deltaTime, app.screen);
         }
       });
     };
 
     initPixiApp();
 
-    setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
+    setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
                     deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval });
     
     const interval = setInterval(() => {
