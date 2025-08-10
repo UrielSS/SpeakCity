@@ -112,10 +112,10 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
       const { top, bottom, left, right } = intersection.connectedStreets;
 
       // Solo agrega calles que existen y no están cerradas
-      if (top && !closedStreetsRef.current.has(top.name)) possibleDirections.push(top);
-      if (bottom && !closedStreetsRef.current.has(bottom.name)) possibleDirections.push(bottom);
-      if (left && !closedStreetsRef.current.has(left.name)) possibleDirections.push(left);
-      if (right && !closedStreetsRef.current.has(right.name)) possibleDirections.push(right);
+      if (top && !closedStreetsRef.current.has(top.id)) possibleDirections.push(top);
+      if (bottom && !closedStreetsRef.current.has(bottom.id)) possibleDirections.push(bottom);
+      if (left && !closedStreetsRef.current.has(left.id)) possibleDirections.push(left);
+      if (right && !closedStreetsRef.current.has(right.id)) possibleDirections.push(right);
 
       // Elimina la calle actual para evitar volver atrás
       const filtered = possibleDirections.filter(s => s !== car.currentStreet);
@@ -171,8 +171,8 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
           const intersection = allIntersectionsRef.current.get(intersectionId);
           if (intersection) {
             intersection.connectedStreets = {
-              'top': allStreetsRef.current.get("V" + i + (j - 1)),
-              'bottom': allStreetsRef.current.get("V" + i + j),
+              'top': allStreetsRef.current.get("V" + j + (i - 1)),
+              'bottom': allStreetsRef.current.get("V" + j + i),
               'left': allStreetsRef.current.get("H" + i + (j - 1)),
               'right': allStreetsRef.current.get("H" + i + j)
             };
