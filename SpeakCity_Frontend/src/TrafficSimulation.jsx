@@ -1,579 +1,301 @@
-import React, { useEffect, useRef } from "react";
+// Classes/Car.js
 import * as PIXI from "pixi.js";
-import { Car } from "./classes/Car";
-import { TrafficLight } from "./Classes/TrafficLight";
-import { preloadAssets } from "./Utils/preloadAssets";
-import { 
-  areRectanglesIntersecting, 
-  drawStreets, 
-  drawIntersections,
-  setComplex, 
-  setNameStreets 
-} from "./utils/utils";
-import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
+import { CANVAS_CONFIG } from "../utils/constants";
 
-  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
+let nextCarID = 0;
+const { halfWidthStreets } = CANVAS_CONFIG;
 
-  const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
-  const { wVS, wHS } = CALCULATED_VALUES;
+export class Car extends PIXI.Sprite {
+  static registry = new Set();
 
-  const pixiContainerRef = useRef(null);
-  const appRef = useRef(null);
-  const carsRef = useRef([]);
-  const allStreetsRef = useRef(new Map());
-  const allIntersectionsRef = useRef(new Map());
-  const closedStreetsRef = useRef(new Map());
-  const trafficLights = [];
-  const trafficLights_deactivated = [];
+  constructor(texture, isVertical, initialPosition, direction, speed, currentStreet = null, nextStreet = null) {
+    super(texture);
 
-  const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
-    const streetToClose = allStreets.get(nameStreet);
-    if (!streetToClose || closedStreets.has(nameStreet)) return;
+    this.id = nextCarID++;
+    this.isVertical = isVertical;
+    this.direction = direction;   // 1 (derecha/abajo), -1 (izquierda/arriba)
+    this.speed = speed;
+    this.isStopped = false;
 
-    streetToClose.toggleClosed();
-    closedStreets.set(nameStreet, true);
-    console.log(`Calle ${nameStreet} cerrada.`);
-  };
+    this.anchor.set(0.5, 0.5);
+    this.scale.set(0.020);
 
-  const openStreet = (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
-    if (closedStreets.has(nameStreet)) {
-      const streetToOpen = allStreets.get(nameStreet);
-      if (streetToOpen) {
-        streetToOpen.toggleClosed();
-        closedStreets.delete(nameStreet);
-        console.log(`Calle ${nameStreet} reabierta.`);
-      }
-    }
-  };
+    this.x = initialPosition.x;
+    this.y = initialPosition.y;
 
-  const changeTrafficLight_red = (nameTrafficLight) => {
-    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
-    trafficLightModify.setState('red');
-    trafficLightModify.stopTimer();
-  };
+    // Navegación
+    this.currentStreet = currentStreet;
+    this.nextStreet = nextStreet;
+    this.hasChangedDirection = false;
 
-  const changeTrafficLight_green = (nameTrafficLight) => {
-    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
-    trafficLightModify.setState('green');
-    trafficLightModify.stopTimer();
-  };
+    // Giro suave (bezier)
+    this.isTurning = false;
+    this.turnTime = 0;
+    this.turnDuration = 30; // frames
+    this.turnPath = [];
+    this.turnIndex = 0;
 
-  const deactivateTrafficLight = (nameTrafficLight) => {
-    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
-    const index = trafficLights.indexOf(trafficLightModify);
-    if (index !== -1) {
-      trafficLights.splice(index, 1);
-      trafficLights_deactivated.push(trafficLightModify);
-      trafficLightModify.deactivate();
-    }
-  };
+    this.proximityBlocked = false;
 
-  const activateTrafficLight = (nameTrafficLight) => {
-    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights_deactivated);
-    const index = trafficLights_deactivated.indexOf(trafficLightModify);
-    if (index !== -1) {
-      trafficLights_deactivated.splice(index, 1);
-      trafficLights.push(trafficLightModify);
-      trafficLightModify.activate();
-    }
-  };
+    this.setCarRotation();
+    Car.registry.add(this);
+  }
 
-  const changeTrafficLightTimeInterval = (nameTrafficLight, durationChangeSeconds) => {
-    let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
-    if (trafficLightModify !== null) {
-      trafficLightModify.startTimer(durationChangeSeconds * 1000);
+  destroy(options) {
+    Car.registry.delete(this);
+    super.destroy(options);
+  }
+
+  setCarRotation() {
+    if (this.isVertical) {
+      this.rotation = (this.direction === 1) ? (Math.PI / 2) : (-Math.PI / 2);
+    } else {
+      this.rotation = (this.direction === 1) ? 0 : Math.PI;
     }
   }
 
-  const getObjectTrafficLight = (nameTrafficLight, arrayTrafficLigths) => {
-    let arrayName = nameTrafficLight.split(" ");
-    let intersection = arrayName[0];
-    let direction = arrayName[1];
+  stop()  { this.isStopped = true; }
+  resume(){ this.isStopped = false; }
 
-    let trafficLightModify = null;
-    for(let i=0; i < arrayTrafficLigths.length; i++) {
-      let trafficLight = arrayTrafficLigths[i];
-      if (trafficLight.direction.toUpperCase() == direction && trafficLight.intersection.id == intersection) {
-        trafficLightModify = trafficLight;
-        break
+  _laneIndex() {
+    if (!this.currentStreet) return -1;
+    const [sx, sy] = this.currentStreet.dimensions;
+    if (this.isVertical) {
+      const rel = this.x - sx;
+      return (rel < halfWidthStreets) ? 0 : 1;
+    } else {
+      const rel = this.y - sy;
+      return (rel < halfWidthStreets) ? 0 : 1;
+    }
+  }
+
+  axisLength() {
+    return this.width; // usando ancho escalado como “largo” efectivo
+  }
+
+  _desiredGapPx() {
+    const L = this.axisLength();
+    // Aumentamos colchón para giros lentos y desaceleraciones
+    return Math.max(28, L * 0.85);
+  }
+
+  scanFront() {
+    const laneA = this._laneIndex();
+    const LhA = this.axisLength() * 0.5;
+
+    let minGap = Infinity;
+    let frontCar = null;
+
+    for (const other of Car.registry) {
+      if (other === this) continue;
+      if (other.isVertical !== this.isVertical) continue;
+      if (other.currentStreet !== this.currentStreet) continue;
+      if (other.direction !== this.direction) continue;
+      if (other._laneIndex() !== laneA) continue;
+
+      const LhB = other.axisLength() * 0.5;
+
+      if (!this.isVertical) {
+        if (this.direction === 1 && other.x >= this.x) {
+          const frontA = this.x + LhA;
+          const backB  = other.x - LhB;
+          const gap = backB - frontA;
+          if (gap < minGap) { minGap = gap; frontCar = other; }
+        }
+        if (this.direction === -1 && other.x <= this.x) {
+          const frontA = this.x - LhA;
+          const backB  = other.x + LhB;
+          const gap = frontA - backB;
+          if (gap < minGap) { minGap = gap; frontCar = other; }
+        }
+      } else {
+        if (this.direction === 1 && other.y >= this.y) {
+          const frontA = this.y + LhA;
+          const backB  = other.y - LhB;
+          const gap = backB - frontA;
+          if (gap < minGap) { minGap = gap; frontCar = other; }
+        }
+        if (this.direction === -1 && other.y <= this.y) {
+          const frontA = this.y - LhA;
+          const backB  = other.y + LhB;
+          const gap = frontA - backB;
+          if (gap < minGap) { minGap = gap; frontCar = other; }
+        }
       }
     }
-    return trafficLightModify;
-  };
+    return { gapAhead: minGap, frontCar };
+  }
 
-  
+  safeStep(deltaTime, gapAhead) {
+    const planned = Math.abs(this.speed * deltaTime);
+    const desired = this._desiredGapPx();
 
+    if (!isFinite(gapAhead)) return planned;
+    if (gapAhead <= desired) return 0;
 
-  useEffect(() => {
-    //Función para decidir la dirección del coche
-    function decideNextStreet(car, intersection, closedStreetsRef) {
-      const possibleDirections = [];
+    const safeFree = gapAhead - desired;
+    if (planned > safeFree) {
+      // un poco más conservador para evitar jitter/encimado
+      return Math.max(0, safeFree * 0.85);
+    }
+    return planned;
+  }
 
-      const { top, bottom, left, right } = intersection.connectedStreets;
+  setDirectionBasedOnStreet(nextStreet) {
+    if (!nextStreet) return;
 
-      // Solo agrega calles que existen y no están cerradas
-      if (top && !closedStreetsRef.current.has(top.id)) possibleDirections.push(top);
-      if (bottom && !closedStreetsRef.current.has(bottom.id)) possibleDirections.push(bottom);
-      if (left && !closedStreetsRef.current.has(left.id)) possibleDirections.push(left);
-      if (right && !closedStreetsRef.current.has(right.id)) possibleDirections.push(right);
+    const [streetX, streetY] = nextStreet.dimensions;
+    const comingFromVertical = this.isVertical;
+    const goingToVertical   = (nextStreet.orientation === 'vertical');
 
-      // Elimina la calle actual para evitar volver atrás
-      const filtered = possibleDirections.filter(s => s !== car.currentStreet);
-
-      if (filtered.length === 0) return car.currentStreet; // Si no hay otra opción, seguir
-
-      // Elegir una calle al azar
-      const nextStreet = filtered[Math.floor(Math.random() * filtered.length)];
-      return nextStreet;
+    if (comingFromVertical && goingToVertical) {
+      this.isVertical = true;
+      if (this.y < streetY) {
+        this.direction = 1; // baja
+        this.x = streetX + halfWidthStreets / 2;
+      } else {
+        this.direction = -1; // sube
+        this.x = streetX + halfWidthStreets / 2 + halfWidthStreets;
+      }
+    } else if (!comingFromVertical && !goingToVertical) {
+      this.isVertical = false;
+      if (this.x < streetX) {
+        this.direction = 1; // derecha
+        this.y = streetY + halfWidthStreets / 2;
+      } else {
+        this.direction = -1; // izquierda
+        this.y = streetY + halfWidthStreets / 2 + halfWidthStreets;
+      }
+    } else if (!comingFromVertical && goingToVertical) {
+      this.isVertical = true;
+      if (this.direction === 1) {
+        if (this.y < streetY) {
+          this.direction = 1;  // baja
+          this.x = streetX + halfWidthStreets / 2;
+        } else {
+          this.direction = -1; // sube
+          this.x = streetX + halfWidthStreets / 2 + halfWidthStreets;
+        }
+      } else {
+        if (this.y < streetY) {
+          this.direction = 1;
+          this.x = streetX + halfWidthStreets / 2;
+        } else {
+          this.direction = -1;
+          this.x = streetX + halfWidthStreets / 2 + halfWidthStreets;
+        }
+      }
+    } else if (comingFromVertical && !goingToVertical) {
+      this.isVertical = false;
+      if (this.direction === 1) {
+        if (this.x < streetX) {
+          this.direction = 1;  // derecha
+          this.y = streetY + halfWidthStreets / 2;
+        } else {
+          this.direction = -1; // izquierda
+          this.y = streetY + halfWidthStreets / 2 + halfWidthStreets;
+        }
+      } else {
+        if (this.x < streetX) {
+          this.direction = 1;
+          this.y = streetY + halfWidthStreets / 2;
+        } else {
+          this.direction = -1;
+          this.y = streetY + halfWidthStreets / 2 + halfWidthStreets;
+        }
+      }
     }
 
-    const initPixiApp = async () => {
-      await preloadAssets(); // ¡AQUÍ ESTABA EL ERROR! Llamabas preloadElements() en lugar de preloadAssets()
+    this.setCarRotation();
+  }
 
-      const app = new PIXI.Application();
-      await app.init({
-        width: canvasWidth,
-        height: canvasHeight,
-        backgroundColor: 0x1099bb,
-        antialias: true
-      });
-      
-      pixiContainerRef.current.appendChild(app.canvas);
-      appRef.current = app;
+  // ---- Bezier / giros suaves ----
+  startUTurn(pathPoints) {
+    this.isTurning = true;
+    this.turnPath = pathPoints;
+    this.turnIndex = 0;
+    this.turnTime = 0;
+  }
 
-      // Resto de tu código de inicialización...
-      const backgroundTexture = PIXI.Texture.from('grass_bg');
-      const background = new PIXI.Sprite(backgroundTexture);
-      background.width = app.screen.width;
-      background.height = app.screen.height;
-      app.stage.addChildAt(background, 0);
+  bezier(t, p0, p1, p2) {
+    const x = (1 - t) ** 2 * p0.x + 2 * (1 - t) * t * p1.x + t ** 2 * p2.x;
+    const y = (1 - t) ** 2 * p0.y + 2 * (1 - t) * t * p1.y + t ** 2 * p2.y;
+    return { x, y };
+  }
 
-      const blockContainer = new PIXI.Container();
-      const streetContainer = new PIXI.Container();
-      const intersectionContainer = new PIXI.Container();
-      const carsContainer = new PIXI.Container();
-      const labelContainer = new PIXI.Container();
+  bezierTangent(t, p0, p1, p2) {
+    const dx = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+    const dy = 2 * (1 - t) * (p2.y - p1.y) + 2 * (1 - t) * (p1.y - p0.y); // misma fórmula, expandida
+    return { dx, dy };
+  }
 
-      app.stage.addChild(blockContainer);
-      app.stage.addChild(streetContainer);
-      app.stage.addChild(intersectionContainer);
-      app.stage.addChild(carsContainer);
-      app.stage.addChild(labelContainer);
+  update(deltaTime, appScreen) {
+    const giroOffset = 20;
+    const margen = 10;
 
-      drawStreets(streetContainer, allStreetsRef.current);
-      drawIntersections(intersectionContainer, allIntersectionsRef.current);
-      setNameStreets(allStreetsRef.current, labelContainer);
+    if (this.isTurning) {
+      this.turnTime++;
+      const t = this.turnTime / this.turnDuration;
 
-      // Asignar calles conectadas a las intersecciones
-      for (let i = 0; i <= hortBlocks; i++) {
-        for (let j = 0; j <= vertBlocks; j++) {
-          const intersectionId = "I" + i + j;
-          const intersection = allIntersectionsRef.current.get(intersectionId);
-          if (intersection) {
-            intersection.connectedStreets = {
-              'top': allStreetsRef.current.get("V" + j + (i - 1)),
-              'bottom': allStreetsRef.current.get("V" + j + i),
-              'left': allStreetsRef.current.get("H" + i + (j - 1)),
-              'right': allStreetsRef.current.get("H" + i + j)
-            };
-          }
-          console.log(intersection);
+      const p0 = this.turnPath[0];
+      const p1 = this.turnPath[1];
+      const p2 = this.turnPath[2];
+
+      const { x, y } = this.bezier(t, p0, p1, p2);
+      this.x = x;
+      this.y = y;
+
+      const { dx, dy } = this.bezierTangent(t, p0, p1, p2);
+      this.rotation = Math.atan2(dy, dx);
+
+      if (t >= 1) {
+        this.isTurning = false;
+        this.setCarRotation();
+      }
+      return;
+    }
+
+    if (this.isStopped) return;
+
+    // FRENADO por proximidad en carril
+    const { gapAhead } = this.scanFront();
+    const step = this.safeStep(deltaTime, gapAhead);
+    this.proximityBlocked = (step === 0);
+
+    if (step > 0) {
+      if (!this.isVertical) {
+        this.x += this.direction * step;
+
+        if (this.direction === 1 && this.x > appScreen.width - margen) {
+          this.direction = -1;
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x + 20, y: this.y + 40 };
+          const p2 = { x: appScreen.width - margen - giroOffset, y: this.y + halfWidthStreets };
+          this.startUTurn([p0, p1, p2]);
+        } else if (this.direction === -1 && this.x < margen) {
+          this.direction = 1;
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x - 20, y: this.y - 40 };
+          const p2 = { x: margen + giroOffset, y: this.y - halfWidthStreets };
+          this.startUTurn([p0, p1, p2]);
+        }
+      } else {
+        this.y += this.direction * step;
+
+        if (this.direction === 1 && this.y > appScreen.height - margen) {
+          this.direction = -1;
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x + 40, y: this.y + 20 };
+          const p2 = { x: this.x + halfWidthStreets, y: appScreen.height - margen - giroOffset };
+          this.startUTurn([p0, p1, p2]);
+        } else if (this.direction === -1 && this.y < margen) {
+          this.direction = 1;
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x - 40, y: this.y - 20 };
+          const p2 = { x: this.x - halfWidthStreets, y: margen + giroOffset };
+          this.startUTurn([p0, p1, p2]);
         }
       }
-
-      setComplex(blockContainer);
-
-      for (const [id, intersection] of allIntersectionsRef.current) {
-        if (!["I22", "I21", "I12"].includes(id)) continue;
-        
-        // 4 lados por intersección
-        const topLight = new TrafficLight(intersection, 'top', streetContainer);
-        const bottomLight = new TrafficLight(intersection, 'bottom', streetContainer);
-        const leftLight = new TrafficLight(intersection, 'left', streetContainer);
-        const rightLight = new TrafficLight(intersection, 'right', streetContainer);
-
-        trafficLights.push(topLight, bottomLight, leftLight, rightLight);
-
-        const semaforos = [
-          { light: topLight, initial: 'green' },
-          { light: bottomLight, initial: 'green' },
-          { light: leftLight, initial: 'red' },
-          { light: rightLight, initial: 'red' }
-        ];
-
-        for (const { light, initial } of semaforos) {
-          light.setState(initial);
-          light.startTimer();
-        }
-      }
-
-      // Creación de carros
-      const cars = [];
-      for (let i = 1; i < hortBlocks; i++) {
-        const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-        const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-
-        // Carro 1: Se mueve hacia la derecha en el carril superior
-        const car1 = new Car(
-          texture1,
-          false,
-          { x: 0, y: wHS * i + halfWidthStreets / 2 },
-          1,
-          Math.random()*1.5 +0.5
-        );
-        //Asignación de calle inicial
-        car1.currentStreet = allStreetsRef.current.get("H"+ i + "0");
-        car1.nextStreet = car1.currentStreet;
-        //console.log("H"+ i + "0 " + car1.currentStreet+ "   next: " + car1.nextStreet);
-        carsContainer.addChild(car1);
-        cars.push(car1);
-
-        // Carro 2: Se mueve hacia la izquierda en el carril inferior
-        const car2 = new Car(
-          texture2,
-          false,
-          { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets/2 },
-          -1,
-          Math.random()*1.5
-        );
-        //Asignación de calle inicial
-        car2.currentStreet = allStreetsRef.current.get("H"+ i + (hortBlocks-1));
-        car2.nextStreet = car2.currentStreet;
-        //console.log("H"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
-        
-        car2.scale.x *= -1;
-        carsContainer.addChild(car2);
-        cars.push(car2);
-      }
-
-      // Crear carros para calles verticales
-      for (let i = 1; i < vertBlocks; i++) { //vertBlocks
-        const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-        const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-
-        // Carro 1: Se mueve hacia abajo en el carril izquierdo
-        const car1 = new Car(
-          texture1,
-          true,
-          { x: wVS * i + halfWidthStreets + halfWidthStreets/2, y: 0 },
-          1,
-          1 + Math.random()*1.2
-        );
-        //Asignación de calle inicial
-        car1.currentStreet = allStreetsRef.current.get("V"+ i + "0");
-        car1.nextStreet = car1.currentStreet;
-        //console.log("V"+ i + "0  " + car1.currentStreet+ "   next: " + car1.nextStreet);
-        
-        carsContainer.addChild(car1);
-        cars.push(car1);
-
-        // Carro 2: Se mueve hacia arriba en el carril derecho
-        const car2 = new Car(
-          texture2,
-          true,
-          { x: wVS * i + halfWidthStreets - halfWidthStreets/2, y: canvasHeight },
-          -1,
-          1 + Math.random()
-        );
-        //Asignación de calle inicial
-        car2.currentStreet = allStreetsRef.current.get("V"+ i + (vertBlocks-1));
-        car2.nextStreet = car2.currentStreet;
-        //console.log("V"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
-        
-        car2.scale.y *= -1;
-        carsContainer.addChild(car2);
-        cars.push(car2);
-      }
-
-      carsRef.current = cars;
-
-      // Configurar el game loop
-      app.ticker.add((time) => {
-        const deltaTime = time.deltaTime;
-
-        // Mover todos los carros
-        // for (const car of carsRef.current) {
-        //   car.update(deltaTime, app.screen);
-        // }
-
-        // Detección de colisiones
-        for (let i = 0; i < carsRef.current.length; i++) {
-          const carA = carsRef.current[i];
-          const carABounds = carA.getBounds();
-          let carAFrontSensor;
-          
-          if (carA.isVertical) {
-            if (carA.direction == 1) {
-              carAFrontSensor = new PIXI.Rectangle(
-                carABounds.x,
-                carABounds.y + carABounds.height - carABounds.height/4,
-                carABounds.width,
-                carABounds.height/4
-              );
-            } else {
-              carAFrontSensor = new PIXI.Rectangle(
-                carABounds.x,
-                carABounds.y,
-                carABounds.width,
-                carABounds.height/4
-              );
-            }
-          } else {
-            if (carA.direction == 1) {
-              carAFrontSensor = new PIXI.Rectangle(
-                carABounds.x + carABounds.width - carABounds.width/4,
-                carABounds.y,
-                carABounds.width / 4,
-                carABounds.height
-              );
-            } else {
-              carAFrontSensor = new PIXI.Rectangle(
-                carABounds.x,
-                carABounds.y,
-                carABounds.width / 4,
-                carABounds.height
-              );
-            }
-          }
-
-          let carANearIntersection = false;
-
-          // Verificar intersecciones
-          for (const [id, intersection] of allIntersectionsRef.current) {
-            const intersectionBounds = new PIXI.Rectangle(
-              intersection.dimensions[0],
-              intersection.dimensions[1],
-              intersection.dimensions[2],
-              intersection.dimensions[3]
-            );
-
-            const intersectionBuffer = 20;
-            const bufferedIntersectionBounds = new PIXI.Rectangle(
-              intersection.dimensions[0] - intersectionBuffer,
-              intersection.dimensions[1] - intersectionBuffer,
-              intersection.dimensions[2] + 2 * intersectionBuffer,
-              intersection.dimensions[3] + 2 * intersectionBuffer
-            );
-
-            if (areRectanglesIntersecting(carAFrontSensor, bufferedIntersectionBounds)) {
-              carANearIntersection = true;
-              let shouldCarAStop = false;
-
-              for (let j = 0; j < carsRef.current.length; j++) {
-                if (i === j) continue;
-
-                const carB = carsRef.current[j];
-                const carBBounds = carB.getBounds();
-
-                if (areRectanglesIntersecting(carBBounds, intersectionBounds)) {
-                  if (areRectanglesIntersecting(carAFrontSensor, intersectionBounds)){
-                    if (carB.id < carA.id)
-                      shouldCarAStop = true;
-                  } else {
-                    if (!carB.isStopped ) {
-                      shouldCarAStop = true;
-                    }
-                  }
-                  break;
-                }
-              }
-
-              if (shouldCarAStop) {
-                carA.stop();
-              } else {
-                carA.resume();
-              }
-              break;
-            }
-          }
-
-          if (!carANearIntersection) {
-            carA.resume();
-          }
-
-          // Verificar semáforos
-          for (const light of trafficLights) {
-            const stopZone = light.getStopZone();
-
-            // Solo aplica si el auto va en la misma orientación que el semáforo
-            const dir = light.direction;
-            const isVerticalLight = (dir === 'top' || dir === 'bottom');
-            const matchesDirection =
-                (carA.isVertical && isVerticalLight) ||
-                (!carA.isVertical && !isVerticalLight);
-
-            if (!matchesDirection) continue;
-
-            if (light.isRed()) {
-              const carSensor = carA.getBounds();
-
-              if (areRectanglesIntersecting(carSensor, stopZone)) {
-                // Verificamos si el coche ya pasó la intersección
-                const [ix, iy, iw, ih] = light.intersection.dimensions;
-                const carCenter = {
-                  x: carSensor.x + carSensor.width / 2,
-                  y: carSensor.y + carSensor.height / 2
-                };
-
-                let shouldStop = false;
-
-                if (carA.isVertical) {
-                  if (carA.direction === 1 && carCenter.y < iy) {
-                    shouldStop = true; // Va hacia abajo y aún no entra
-                  }
-                  if (carA.direction === -1 && carCenter.y > iy + ih) {
-                    shouldStop = true; // Va hacia arriba y aún no entra
-                  }
-                } else {
-                  if (carA.direction === 1 && carCenter.x < ix) {
-                    shouldStop = true; // Va hacia la derecha y aún no entra
-                  }
-                  if (carA.direction === -1 && carCenter.x > ix + iw) {
-                    shouldStop = true; // Va hacia la izquierda y aún no entra
-                  }
-                }
-
-                if (shouldStop) {
-                  carA.stop();
-                  break;
-                }
-              }
-            }
-          }
-
-          // Verificación por calle cerrada
-          for (const [streetId] of closedStreetsRef.current) {
-            const closedStreet = allStreetsRef.current.get(streetId);
-            if (!closedStreet) continue;
-
-            const stopMargin = 20;
-            let stopZone;
-
-            if (closedStreet.orientation === 'horizontal') {
-              if (carA.direction === 1) {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0] - stopMargin,
-                  closedStreet.dimensions[1],
-                  stopMargin,
-                  closedStreet.dimensions[3]
-                );
-              } else {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0] + closedStreet.dimensions[2],
-                  closedStreet.dimensions[1],
-                  stopMargin,
-                  closedStreet.dimensions[3]
-                );
-              }
-            } else {
-              if (carA.direction === 1) {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0],
-                  closedStreet.dimensions[1] - stopMargin,
-                  closedStreet.dimensions[2],
-                  stopMargin
-                );
-              } else {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0],
-                  closedStreet.dimensions[1] + closedStreet.dimensions[3],
-                  closedStreet.dimensions[2],
-                  stopMargin
-                );
-              }
-            }
-
-            if (closedStreet.orientation === 'horizontal' && !carA.isVertical) {
-              if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-                carA.stop();
-                break;
-              }
-            }
-            if (closedStreet.orientation === 'vertical' && carA.isVertical) {
-              if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-                carA.stop();
-                break;
-              }
-            }
-          }
-
-          // Lógica de cambio de calle/intersección
-          let isInIntersection = false;
-
-          //
-          for (const [id, intersection] of allIntersectionsRef.current) {
-            const intersectionBounds = new PIXI.Rectangle(
-              intersection.dimensions[0]- 2,
-              intersection.dimensions[1] - 2,
-              intersection.dimensions[2] + 4,
-              intersection.dimensions[3] + 4
-            );
-
-            if (areRectanglesIntersecting(carA.getBounds(), intersectionBounds)) {
-              isInIntersection = true;
-
-              if (!carA.hasChangedDirection) {
-                let nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
-
-                if (closedStreetsRef.current.get(nextStreet.id)) {
-                  // Reintentar si la primera opción está cerrada
-                  nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
-                }
-
-                if (/*nextStreet && */nextStreet !== carA.currentStreet) {
-                  carA.nextStreet = nextStreet;
-                  carA.setDirectionBasedOnStreet(nextStreet);
-                  carA.hasChangedDirection = true;
-                } else {
-                  // Si no hay otra calle, seguir en la actual
-                  carA.nextStreet = carA.currentStreet;
-                  carA.setDirectionBasedOnStreet(carA.currentStreet);
-                }
-              }
-              break;
-            }
-          }
-
-          if (!isInIntersection && carA.hasChangedDirection && carA.nextStreet) {
-            carA.currentStreet = carA.nextStreet;
-            carA.hasChangedDirection = false;
-          }
-
-          //Al final, actualiza la posición del coche según las decisiones tomadas a partir de los elementos del mapa
-          carA.update(deltaTime, app.screen);
-        }
-      });
-    };
-
-    initPixiApp();
-
-    setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
-                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval });
-    
-    const interval = setInterval(() => {
-      // Número de carros
-      const currentNumCars = carsRef.current.length;
-      setNumCars(currentNumCars);
-
-      // Número de calles cerradas
-      const closed = closedStreetsRef.current.size;
-      setCloseStreets(closed);
-
-      // Número de calles abiertas
-      const total = allStreetsRef.current.size;
-      const opened = total - closed;
-      setOpenStreets(opened);
-    }, 500);
-
-    return () => {
-      if (appRef.current) {
-        appRef.current.destroy(true);
-      }
-      clearInterval(interval);
-    };
-  }, []);
-
-  return <div ref={pixiContainerRef} />;
-};
-
-export default TrafficSimulation;
+    }
+  }
+}
