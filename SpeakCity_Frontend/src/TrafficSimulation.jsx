@@ -128,7 +128,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
     }
 
     const initPixiApp = async () => {
-      await preloadAssets(); // ¡AQUÍ ESTABA EL ERROR! Llamabas preloadElements() en lugar de preloadAssets()
+      await preloadAssets();
 
       const app = new PIXI.Application();
       await app.init({
@@ -234,14 +234,14 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
           false,
           { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets/2 },
           -1,
-          Math.random()*1.5
+          Math.random()*1.5+0.8
         );
         //Asignación de calle inicial
         car2.currentStreet = allStreetsRef.current.get("H"+ i + (hortBlocks-1));
         car2.nextStreet = car2.currentStreet;
         //console.log("H"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
         
-        car2.scale.x *= -1;
+        // car2.scale.x *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
       }
@@ -280,7 +280,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES } from "./utils/constants";
         car2.nextStreet = car2.currentStreet;
         //console.log("V"+ i + "3 " + car2.currentStreet+ "   next: " + car2.nextStreet);
         
-        car2.scale.y *= -1;
+        // car2.scale.y *= -1;
         carsContainer.addChild(car2);
         cars.push(car2);
       }
