@@ -10,3 +10,5 @@ export const CALCULATED_VALUES = {
   wVS: Math.floor((CANVAS_CONFIG.width - 2 * CANVAS_CONFIG.halfWidthStreets) / CANVAS_CONFIG.vertBlocks),
   wHS: Math.floor((CANVAS_CONFIG.height - 2 * CANVAS_CONFIG.halfWidthStreets) / CANVAS_CONFIG.hortBlocks)
 };
+
+export const EXCLUDED_STREETS = new Set(['H11', 'H12', 'H31', 'H30', 'V21', 'V32', 'V20']);

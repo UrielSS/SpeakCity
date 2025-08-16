@@ -2,10 +2,11 @@
 import * as PIXI from "pixi.js";
 import { Street } from "../Classes/Street";
 import { Intersection } from "../Classes/Intersection";
-import { CANVAS_CONFIG, CALCULATED_VALUES} from "../utils/constants"; 
+import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "../utils/constants"; 
 
 const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
 const { wVS, wHS } = CALCULATED_VALUES;
+const excludedStreets = EXCLUDED_STREETS;
 
 // Función para verificar la intersección de dos rectángulos
 export const areRectanglesIntersecting = (rect1, rect2) => {
@@ -23,20 +24,26 @@ export const drawStreets = (container, streetsMap) => {
   // Calles horizontales
   for (let i = 0; i <= hortBlocks; i++) {
     for (let j = 0; j < vertBlocks; j++) {
-      let streetDimension = [j * wVS+halfWidthStreets, wHS * i , wVS , 2 * halfWidthStreets];
       const streetId = "H" + i + j;
-      const street = new Street(streetId, streetDimension, 'horizontal', container);
-      streetsMap.set(streetId, street);
+      // Solo crear la calle si no está en la lista de excluidas
+      if (!excludedStreets.has(streetId)) {
+        let streetDimension = [j * wVS + halfWidthStreets, wHS * i, wVS, 2 * halfWidthStreets];
+        const street = new Street(streetId, streetDimension, 'horizontal', container);
+        streetsMap.set(streetId, street);
+      }
     }
   }
 
-  // // Calles verticales
+  // Calles verticales
   for (let i = 0; i <= vertBlocks; i++) {
     for (let j = 0; j < hortBlocks; j++) {
-      let streetDimension = [wVS * i , j * wHS+halfWidthStreets, 2 * halfWidthStreets, wHS];
       const streetId = "V" + i + j;
-      const street = new Street(streetId, streetDimension, 'vertical', container);
-      streetsMap.set(streetId, street);
+      // Solo crear la calle si no está en la lista de excluidas
+      if (!excludedStreets.has(streetId)) {
+        let streetDimension = [wVS * i, j * wHS + halfWidthStreets, 2 * halfWidthStreets, wHS];
+        const street = new Street(streetId, streetDimension, 'vertical', container);
+        streetsMap.set(streetId, street);
+      }
     }
   }
   
@@ -63,12 +70,17 @@ export const drawStreets = (container, streetsMap) => {
 };
 
 export const drawIntersections = (container, intersectionsMap) => {
+  const excludedIntersections = ["I12"];
+  
   for (let i = 0; i <= hortBlocks; i++) {
     for (let j = 0; j <= vertBlocks; j++) {
-      let intersectionDimension = [j * wVS , wHS * i, 2 * halfWidthStreets, 2 * halfWidthStreets];
       const intersectionId = "I" + i + j;
-      const intersection = new Intersection(intersectionId, intersectionDimension, container);
-      intersectionsMap.set(intersectionId, intersection);
+      // Evitar dibujar intersecciones
+      if (!excludedIntersections.includes(intersectionId)) {
+        let intersectionDimension = [j * wVS, wHS * i, 2 * halfWidthStreets, 2 * halfWidthStreets];
+        const intersection = new Intersection(intersectionId, intersectionDimension, container);
+        intersectionsMap.set(intersectionId, intersection);
+      }
     }
   }
 };
