@@ -53,12 +53,13 @@ export class Car extends PIXI.Sprite {
     const comingFromVertical = this.isVertical;
     const goingToVertical = (nextStreet.orientation === 'vertical');
 
+    console.log("Posicion actual del coche : " + this.x + ","+this.y);
     // Giro de horizontal -> vertical
     if (!comingFromVertical && goingToVertical) {
       this.isVertical = true;
       if (this.direction === 1) {
         // venía de la izquierda
-        if (this.y < streetY) {
+        if (this.y < streetY ) {
           this.direction = 1; // gira abajo
           this.x = streetX + halfWidthStreets / 2;                // carril baja
         } else {
@@ -67,7 +68,7 @@ export class Car extends PIXI.Sprite {
         }
       } else {
         // venía de la derecha
-        if (this.y < streetY) {
+        if (this.y < (streetY + 10)) { //Se agrega umbral teniendo en cuenta el origen de la calle
           this.direction = 1;  // gira abajo
           this.x = streetX + halfWidthStreets / 2;
         } else {
@@ -90,7 +91,7 @@ export class Car extends PIXI.Sprite {
         }
       } else {
         // venía de abajo (subiendo)
-        if (this.x < streetX) {
+        if (this.x < (streetX + 10)) { //Se agrega umbral teniendo en cuenta el origen de la calle
           this.direction = 1;  // gira derecha
           this.y = streetY + halfWidthStreets / 2;
         } else {

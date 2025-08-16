@@ -275,7 +275,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             false,
             { x: 0, y: wHS * i + halfWidthStreets / 2 },
             1,
-            Math.random() * 1.5 + 0.5
+            /*Math.random() * 1.5 + */ 0.35
           );
 
           // Asignación de calle inicial
@@ -595,14 +595,16 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
                   carA.nextStreet = carA.currentStreet;
                   carA.setDirectionBasedOnStreet(carA.currentStreet);
                 }
+                console.log(carA.currentStreet.id+"  ->  "+carA.nextStreet.id);
               }
               break;
             }
           }
 
-          if (!isInIntersection && carA.hasChangedDirection && carA.nextStreet) {
+          if (!isInIntersection && carA.hasChangedDirection) {
             carA.currentStreet = carA.nextStreet;
             carA.hasChangedDirection = false;
+            console.log("NEW CURRENT STREET: "+carA.currentStreet.id);
           }
 
           //Al final, actualiza la posición del coche según las decisiones tomadas a partir de los elementos del mapa
