@@ -507,61 +507,61 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             }
           }
 
-          // Verificación por calle cerrada
-          for (const [streetId] of closedStreetsRef.current) {
-            const closedStreet = allStreetsRef.current.get(streetId);
-            if (!closedStreet) continue;
+          // // Verificación por calle cerrada
+          // for (const [streetId] of closedStreetsRef.current) {
+          //   const closedStreet = allStreetsRef.current.get(streetId);
+          //   if (!closedStreet) continue;
 
-            const stopMargin = 20;
-            let stopZone;
+          //   const stopMargin = 20;
+          //   let stopZone;
 
-            if (closedStreet.orientation === 'horizontal') {
-              if (carA.direction === 1) {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0] - stopMargin,
-                  closedStreet.dimensions[1],
-                  stopMargin,
-                  closedStreet.dimensions[3]
-                );
-              } else {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0] + closedStreet.dimensions[2],
-                  closedStreet.dimensions[1],
-                  stopMargin,
-                  closedStreet.dimensions[3]
-                );
-              }
-            } else {
-              if (carA.direction === 1) {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0],
-                  closedStreet.dimensions[1] - stopMargin,
-                  closedStreet.dimensions[2],
-                  stopMargin
-                );
-              } else {
-                stopZone = new PIXI.Rectangle(
-                  closedStreet.dimensions[0],
-                  closedStreet.dimensions[1] + closedStreet.dimensions[3],
-                  closedStreet.dimensions[2],
-                  stopMargin
-                );
-              }
-            }
+          //   if (closedStreet.orientation === 'horizontal') {
+          //     if (carA.direction === 1) {
+          //       stopZone = new PIXI.Rectangle(
+          //         closedStreet.dimensions[0] - stopMargin,
+          //         closedStreet.dimensions[1],
+          //         stopMargin,
+          //         closedStreet.dimensions[3]
+          //       );
+          //     } else {
+          //       stopZone = new PIXI.Rectangle(
+          //         closedStreet.dimensions[0] + closedStreet.dimensions[2],
+          //         closedStreet.dimensions[1],
+          //         stopMargin,
+          //         closedStreet.dimensions[3]
+          //       );
+          //     }
+          //   } else {
+          //     if (carA.direction === 1) {
+          //       stopZone = new PIXI.Rectangle(
+          //         closedStreet.dimensions[0],
+          //         closedStreet.dimensions[1] - stopMargin,
+          //         closedStreet.dimensions[2],
+          //         stopMargin
+          //       );
+          //     } else {
+          //       stopZone = new PIXI.Rectangle(
+          //         closedStreet.dimensions[0],
+          //         closedStreet.dimensions[1] + closedStreet.dimensions[3],
+          //         closedStreet.dimensions[2],
+          //         stopMargin
+          //       );
+          //     }
+          //   }
 
-            if (closedStreet.orientation === 'horizontal' && !carA.isVertical) {
-              if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-                carA.stop();
-                break;
-              }
-            }
-            if (closedStreet.orientation === 'vertical' && carA.isVertical) {
-              if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-                carA.stop();
-                break;
-              }
-            }
-          }
+          //   if (closedStreet.orientation === 'horizontal' && !carA.isVertical) {
+          //     if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
+          //       carA.stop();
+          //       break;
+          //     }
+          //   }
+          //   if (closedStreet.orientation === 'vertical' && carA.isVertical) {
+          //     if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
+          //       carA.stop();
+          //       break;
+          //     }
+          //   }
+          // }
 
           // Lógica de cambio de calle/intersección
           let isInIntersection = false;
