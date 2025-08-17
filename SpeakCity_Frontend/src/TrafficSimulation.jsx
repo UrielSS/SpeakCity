@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { Car } from "./classes/Car";
-import { TrafficLight } from "./Classes/TrafficLight";
-import { preloadAssets } from "./Utils/preloadAssets";
+import { TrafficLight } from "./classes/TrafficLight";
+import { preloadAssets } from "./utils/preloadAssets";
 import { 
   areRectanglesIntersecting, 
   drawStreets, 
@@ -103,8 +103,47 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
     return trafficLightModify;
   };
 
-  
+  // Nueva función para manejar la detección de colisiones entre coches
+  const handleCarToCarCollisions = (cars) => {
+    for (let i = 0; i < cars.length; i++) {
+      const carA = cars[i];
+      let shouldStopForTraffic = false;
+      let closestDistance = Infinity;
 
+      // Resetear estado de parada por tráfico
+      if (carA.isStoppedByTraffic) {
+        carA.resumeFromTraffic();
+      }
+
+      // Verificar colisiones con otros coches
+      for (let j = 0; j < cars.length; j++) {
+        if (i === j) continue;
+        
+        const carB = cars[j];
+
+        // Verificar si el coche B está en el mismo carril y adelante
+        if (carA.isCarInSameLaneAhead(carB)) {
+          const distance = carA.getDistanceToCarAhead(carB);
+          
+          // Si la distancia es positiva y menor que la distancia de detección
+          //Esto significa que el coche B está adelante en el mismo carril
+          if (distance > 0 && distance < carA.detectionDistance) {
+            // Si el coche de adelante está parado o muy cerca, detenerse
+            if (carB.isStopped || distance < carA.minFollowDistance) {
+              shouldStopForTraffic = true;
+              closestDistance = Math.min(closestDistance, distance);
+              break;
+            }
+          }
+        }
+      }
+
+      // Aplicar parada por tráfico si es necesario
+      if (shouldStopForTraffic) {
+        carA.stopByTraffic();
+      }
+    }
+  };
 
   useEffect(() => {
     //Función para decidir la dirección del coche
@@ -262,7 +301,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       // Creación de carros
       const cars = [];
       // Crear carros para calles horizontales
-      for (let i = 1; i < 2; i++) {
+      for (let i = 1; i < hortBlocks; i++) {
         // Evito spawnear coches en calles excluidas
         const streetId1 = "H" + i + "0";
         const streetId2 = "H" + i + (vertBlocks - 1);
@@ -275,7 +314,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             false,
             { x: 0, y: wHS * i + halfWidthStreets / 2 },
             1,
-            /*Math.random() * 1.5 + */ 0.35
+            Math.random() * 1.5 +  0.35
           );
 
           // Asignación de calle inicial
@@ -301,13 +340,13 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
           car2.currentStreet = allStreetsRef.current.get(streetId2);
           car2.nextStreet = car2.currentStreet;
 
-          // carsContainer.addChild(car2);
-          // cars.push(car2);
+          carsContainer.addChild(car2);
+          cars.push(car2);
         }
       }
 
       // Crear carros para calles verticales
-      for (let i = 1; i < 1; i++) {
+      for (let i = 1; i < vertBlocks; i++) {
         // Evito spawnear coches en calles excluidas
         const streetId1 = "V" + i + "0";
         const streetId2 = "V" + i + (hortBlocks - 1);
@@ -346,8 +385,8 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
           car2.currentStreet = allStreetsRef.current.get(streetId2);
           car2.nextStreet = car2.currentStreet;
 
-          // carsContainer.addChild(car2);
-          // cars.push(car2);
+          carsContainer.addChild(car2);
+          cars.push(car2);
         }
       }
 
@@ -357,12 +396,11 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
 
-        // Mover todos los carros
-        // for (const car of carsRef.current) {
-        //   car.update(deltaTime, app.screen);
-        // }
+        // Detección de colisiones entre coches
+        // Primero manejo las colisiones coche a coche entre ellos y el mismo carril
+        handleCarToCarCollisions(carsRef.current);
 
-        // Detección de colisiones
+        // Detección de colisiones con intersecciones y semáforos
         for (let i = 0; i < carsRef.current.length; i++) {
           const carA = carsRef.current[i];
           const carABounds = carA.getBounds();
@@ -447,14 +485,20 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
               if (shouldCarAStop) {
                 carA.stop();
               } else {
-                carA.resume();
+                // Solo reanudar si no está parado por tráfico
+                if (!carA.isStoppedByTraffic) {
+                  carA.resume();
+                }
               }
               break;
             }
           }
 
           if (!carANearIntersection) {
-            carA.resume();
+            // Solo reanudar si no está parado por tráfico
+            if (!carA.isStoppedByTraffic) {
+              carA.resume();
+            }
           }
 
           // Verificar semáforos
@@ -507,66 +551,9 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             }
           }
 
-          // // Verificación por calle cerrada
-          // for (const [streetId] of closedStreetsRef.current) {
-          //   const closedStreet = allStreetsRef.current.get(streetId);
-          //   if (!closedStreet) continue;
-
-          //   const stopMargin = 20;
-          //   let stopZone;
-
-          //   if (closedStreet.orientation === 'horizontal') {
-          //     if (carA.direction === 1) {
-          //       stopZone = new PIXI.Rectangle(
-          //         closedStreet.dimensions[0] - stopMargin,
-          //         closedStreet.dimensions[1],
-          //         stopMargin,
-          //         closedStreet.dimensions[3]
-          //       );
-          //     } else {
-          //       stopZone = new PIXI.Rectangle(
-          //         closedStreet.dimensions[0] + closedStreet.dimensions[2],
-          //         closedStreet.dimensions[1],
-          //         stopMargin,
-          //         closedStreet.dimensions[3]
-          //       );
-          //     }
-          //   } else {
-          //     if (carA.direction === 1) {
-          //       stopZone = new PIXI.Rectangle(
-          //         closedStreet.dimensions[0],
-          //         closedStreet.dimensions[1] - stopMargin,
-          //         closedStreet.dimensions[2],
-          //         stopMargin
-          //       );
-          //     } else {
-          //       stopZone = new PIXI.Rectangle(
-          //         closedStreet.dimensions[0],
-          //         closedStreet.dimensions[1] + closedStreet.dimensions[3],
-          //         closedStreet.dimensions[2],
-          //         stopMargin
-          //       );
-          //     }
-          //   }
-
-          //   if (closedStreet.orientation === 'horizontal' && !carA.isVertical) {
-          //     if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-          //       carA.stop();
-          //       break;
-          //     }
-          //   }
-          //   if (closedStreet.orientation === 'vertical' && carA.isVertical) {
-          //     if (areRectanglesIntersecting(carAFrontSensor, stopZone)) {
-          //       carA.stop();
-          //       break;
-          //     }
-          //   }
-          // }
-
           // Lógica de cambio de calle/intersección
           let isInIntersection = false;
 
-          //
           for (const [id, intersection] of allIntersectionsRef.current) {
             const intersectionBounds = new PIXI.Rectangle(
               intersection.dimensions[0]- 2,
@@ -586,7 +573,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
                   nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
                 }
 
-                if (/*nextStreet && */nextStreet !== carA.currentStreet) {
+                if (nextStreet !== carA.currentStreet) {
                   carA.nextStreet = nextStreet;
                   carA.setDirectionBasedOnStreet(nextStreet);
                   carA.hasChangedDirection = true;
@@ -624,7 +611,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       setNumCars(currentNumCars);
 
       // Número de calles cerradas
-      const closed = closedStreetsRef.current.size;
+      const closed = closedStreetsRef.current.size - excludedStreets.size;
       setCloseStreets(closed);
 
       // Número de calles abiertas

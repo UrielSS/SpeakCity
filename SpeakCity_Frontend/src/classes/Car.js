@@ -13,6 +13,7 @@ export class Car extends PIXI.Sprite {
     this.direction = direction;
     this.speed = speed;
     this.isStopped = false;
+    this.isStoppedByTraffic = false; // Nueva propiedad para distinguir paradas por tráfico
 
     this.anchor.set(0.5,0.5);
     this.scale.set(0.020);
@@ -31,6 +32,10 @@ export class Car extends PIXI.Sprite {
     this.turnDuration = 30;
     this.turnPath = [];
     this.turnIndex = 0;
+
+    // Propiedades para detección de colisiones
+    this.detectionDistance = 30; // Distancia del sensor frontal en píxeles
+    this.minFollowDistance = 40; // Distancia mínima a mantener con el coche de adelante en píxeles
   }
 
   // Uso operador ternario!!!
@@ -44,7 +49,130 @@ export class Car extends PIXI.Sprite {
 
   stop() { this.isStopped = true; }
   resume() { this.isStopped = false; }
+  
+  // Nuevos métodos para manejar paradas por tráfico
+  stopByTraffic() { 
+    this.isStopped = true; 
+    this.isStoppedByTraffic = true; 
+  }
+  
+  resumeFromTraffic() { 
+    this.isStopped = false; 
+    this.isStoppedByTraffic = false; 
+  }
 
+  // Método para obtener el sensor frontal del coche
+  getFrontSensor() {
+    const bounds = this.getBounds();
+    let sensorBounds;
+
+    if (this.isVertical) {
+      if (this.direction === 1) { // Hacia abajo
+        sensorBounds = new PIXI.Rectangle(
+          bounds.x,
+          bounds.y + bounds.height,
+          bounds.width,
+          this.detectionDistance
+        );
+      } else { // Hacia arriba
+        sensorBounds = new PIXI.Rectangle(
+          bounds.x,
+          bounds.y - this.detectionDistance,
+          bounds.width,
+          this.detectionDistance
+        );
+      }
+    } else { // Horizontal
+      if (this.direction === 1) { // Hacia la derecha
+        sensorBounds = new PIXI.Rectangle(
+          bounds.x + bounds.width,
+          bounds.y,
+          this.detectionDistance,
+          bounds.height
+        );
+      } else { // Hacia la izquierda
+        sensorBounds = new PIXI.Rectangle(
+          bounds.x - this.detectionDistance,
+          bounds.y,
+          this.detectionDistance,
+          bounds.height
+        );
+      }
+    }
+
+    return sensorBounds;
+  }
+
+  // Método para calcular la distancia al coche de adelante
+  getDistanceToCarAhead(otherCar) { //Otro gato referencia
+    const myBounds = this.getBounds();
+    const otherBounds = otherCar.getBounds();
+
+    if (this.isVertical) {
+      if (this.direction === 1) { // Hacia abajo
+        return otherBounds.y - (myBounds.y + myBounds.height);
+      } else { // Hacia arriba
+        return myBounds.y - (otherBounds.y + otherBounds.height);
+      }
+    } else { // Horizontal
+      if (this.direction === 1) { // Hacia la derecha
+        return otherBounds.x - (myBounds.x + myBounds.width);
+      } else { // Hacia la izquierda
+        return myBounds.x - (otherBounds.x + otherBounds.width);
+      }
+    }
+  }
+
+  // Método para verificar si otro coche está en el mismo carril y adelante
+  isCarInSameLaneAhead(otherCar) {
+    const myBounds = this.getBounds();
+    const otherBounds = otherCar.getBounds();
+    const laneWidth = 30; // Tolerancia para considerar mismo carril
+
+    // Verificar si van en la misma orientación
+    if (this.isVertical !== otherCar.isVertical) {
+      return false;
+    }
+
+    // Verificar si van en la misma dirección
+    if (this.direction !== otherCar.direction) {
+      return false;
+    }
+
+    if (this.isVertical) {
+      // Para coches verticales, verificar si están en el mismo carril horizontal
+      const horizontalDistance = Math.abs(
+        (myBounds.x + myBounds.width / 2) - (otherBounds.x + otherBounds.width / 2)
+      );
+      
+      if (horizontalDistance > laneWidth) {
+        return false;
+      }
+
+      // Verificar si el otro coche está adelante
+      if (this.direction === 1) { // Hacia abajo
+        return otherBounds.y > myBounds.y;
+      } else { // Hacia arriba
+        return otherBounds.y < myBounds.y;
+      }
+    } else {
+      // Para coches horizontales, verificar si están en el mismo carril vertical
+      const verticalDistance = Math.abs(
+        (myBounds.y + myBounds.height / 2) - (otherBounds.y + otherBounds.height / 2)
+      );
+      
+      if (verticalDistance > laneWidth) {
+        return false;
+      }
+
+      // Verificar si el otro coche está adelante
+      if (this.direction === 1) { // Hacia la derecha
+        return otherBounds.x > myBounds.x;
+      } else { // Hacia la izquierda
+        return otherBounds.x < myBounds.x;
+      }
+    }
+  }
 
   setDirectionBasedOnStreet(nextStreet) {
     if (!nextStreet) return;
@@ -111,7 +239,7 @@ export class Car extends PIXI.Sprite {
     return { x, y };
   }
 
-  // NUeva función para calcular la tangente de la curva cuadrática
+  // Nueva función para calcular la tangente de la curva cuadrática
   tangentAngleOnQuadratic(t, p0, p1, p2) {
     const dx = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
     const dy = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
@@ -157,7 +285,6 @@ export class Car extends PIXI.Sprite {
     }
 
     if (this.isStopped) return;
-
 
     //Quité todos los scale.x *= -1 y scale.y *= -1
     if (!this.isVertical) {

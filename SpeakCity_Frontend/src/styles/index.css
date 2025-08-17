@@ -69,7 +69,6 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-padding: 2rem 0; /* Solo vertical: arriba y abajo */
   position: relative;
 }
 
@@ -218,9 +217,7 @@ button:focus {
 
 /* Responsive */
 @media (max-width: 768px) {
-  #root {
-    padding: 1rem;
-  }
+
   
   h1 {
     font-size: 2.5rem;
@@ -268,5 +265,47 @@ button:focus {
   
   h3 {
     font-size: 1.3rem;
+  }
+}
+
+/* Escritorio grande */
+@media (min-width: 1600px) {
+  #root {
+    /* max-width: 1700px; */
+    /* padding-left: 2vw; */
+    /* padding-right: 2vw; */
+  }
+}
+
+/* Escritorio normal */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  #root {
+    /* max-width: 1200px; */
+    /* padding-left: 2.5vw; */
+    /* padding-right: 2.5vw; */
+  }
+}
+
+/* Tableta */
+@media (max-width: 1024px) {
+  #root {
+    /* padding-left: 1vw; */
+    /* padding-right: 1vw; */
+  }
+}
+
+/* Movil grande */
+@media (max-width: 768px) {
+  #root {
+    /* padding-left: 0.5vw; */
+    /* padding-right: 0.5vw; */
+  }
+}
+
+/* Movil pequeño */
+@media (max-width: 480px) {
+  #root {
+    /* padding-left: 0.2vw; */
+    /* padding-right: 0.2vw; */
   }
 }
