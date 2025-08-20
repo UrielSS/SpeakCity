@@ -148,19 +148,19 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   useEffect(() => {
     //Función para decidir la dirección del coche
     function decideNextStreet(car, intersection, closedStreetsRef) {
-      console.log(`Decidiendo para coche ${car.id} en intersección ${intersection.id}`);
-      console.log(`Calle actual del coche:`, car.currentStreet ? car.currentStreet.id : 'NULL');
+      //console.log(`Decidiendo para coche ${car.id} en intersección ${intersection.id}`);
+      //console.log(`Calle actual del coche:`, car.currentStreet ? car.currentStreet.id : 'NULL');
 
       const possibleDirections = [];
       const { top, bottom, left, right } = intersection.connectedStreets;
 
       // Log de calles conectadas
-      console.log('Calles conectadas a la intersección:', {
-        top: top ? top.id : 'NULL',
-        bottom: bottom ? bottom.id : 'NULL',
-        left: left ? left.id : 'NULL',
-        right: right ? right.id : 'NULL'
-      });
+      // console.log('Calles conectadas a la intersección:', {
+      //   top: top ? top.id : 'NULL',
+      //   bottom: bottom ? bottom.id : 'NULL',
+      //   left: left ? left.id : 'NULL',
+      //   right: right ? right.id : 'NULL'
+      // });
 
       const filterStreet = (street) => {
         if (!street) {
@@ -169,7 +169,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
         const isExcluded = excludedStreets.has(street.id);
         const isClosed = closedStreetsRef.current.has(street.id);
 
-        console.log(`Evaluando calle ${street.id}: excluida=${isExcluded}, cerrada=${isClosed}`);
+        //console.log(`Evaluando calle ${street.id}: excluida=${isExcluded}, cerrada=${isClosed}`);
 
         return !isExcluded && !isClosed;
       };
@@ -179,38 +179,38 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       if (filterStreet(left)) possibleDirections.push(left);
       if (filterStreet(right)) possibleDirections.push(right);
 
-      console.log('Direcciones posibles:', possibleDirections.map(s => s.id));
+      //console.log('Direcciones posibles:', possibleDirections.map(s => s.id));
 
       // Elimina la calle actual para evitar volver atrás
       const filtered = possibleDirections.filter(s => s !== car.currentStreet);
 
-      console.log('Direcciones después de filtrar calle actual:', filtered.map(s => s.id));
+      //console.log('Direcciones después de filtrar calle actual:', filtered.map(s => s.id));
 
       // Si no hay opciones, intentar quedarse en la calle actual si es válida
       if (filtered.length === 0) {
-        console.log('No hay opciones disponibles');
+        //console.log('No hay opciones disponibles');
         // Si la calle actual es válida, seguir en ella
         if (car.currentStreet && !excludedStreets.has(car.currentStreet.id) &&
           !closedStreetsRef.current.has(car.currentStreet.id)) {
-          console.log('Manteniéndose en calle actual:', car.currentStreet.id);
+          //console.log('Manteniéndose en calle actual:', car.currentStreet.id);
           return car.currentStreet;
         }
         // Si no hay opciones válidas retorno null
-        console.log('Retornando NULL - coche atrapado');
+        //console.log('Retornando NULL - coche atrapado');
         return null;
       }
 
       // Elegir una calle al azar
       const nextStreet = filtered[Math.floor(Math.random() * filtered.length)];
-      console.log('Calle elegida:', nextStreet.id);
+      //console.log('Calle elegida:', nextStreet.id);
       return nextStreet;
     }
 
     // Verifico que calles están en excludedStreets:
-    console.log('Calles excluidas:', Array.from(excludedStreets));
+    //console.log('Calles excluidas:', Array.from(excludedStreets));
 
     // Verifica que calles se están creando realmente:
-    console.log('Calles creadas:', Array.from(allStreetsRef.current.keys()));
+    //console.log('Calles creadas:', Array.from(allStreetsRef.current.keys()));
 
     const initPixiApp = async () => {
       await preloadAssets();
@@ -263,7 +263,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
               'right': excludedStreets.has("H" + i + j) ? null : allStreetsRef.current.get("H" + i + j)
             };
           }
-          console.log(intersection);
+          //console.log(intersection);
         }
       }
 
@@ -391,7 +391,29 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       }
 
       carsRef.current = cars;
+    
 
+      cars.forEach(car => {
+    const label = new PIXI.HTMLText({
+      text: `${car.id}`,
+      style: {
+        fontFamily: 'Arial',
+        fontSize: 18,
+        fill: '#000000ff',
+        align: 'center',
+      },
+    });
+    label.anchor.set(0.5);
+  app.ticker.add(() => { label.position.copyFrom(car.position); });
+  app.stage.addChild(label);
+
+  const box = new PIXI.Graphics();
+  app.ticker.add(() => {
+    box.clear().lineStyle(1, 0xff0000, 1)
+      .drawRect(car.getBounds().x, car.getBounds().y, car.getBounds().width, car.getBounds().height);
+  });
+  app.stage.addChild(box);
+  });
       // Configurar el game loop
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
@@ -400,11 +422,16 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
         // Primero manejo las colisiones coche a coche entre ellos y el mismo carril
         handleCarToCarCollisions(carsRef.current);
 
-        // Detección de colisiones con intersecciones y semáforos
+        //Para cada coche en el mapa
         for (let i = 0; i < carsRef.current.length; i++) {
           const carA = carsRef.current[i];
           const carABounds = carA.getBounds();
           let carAFrontSensor;
+
+          // Imprimir coordernadas de cada coche, solo si son mayores a 800 y 600
+          if (carsRef.current[i].position.x > 800 || carsRef.current[i].position.y > 600) {
+            console.log(Coche `${carsRef.current[i].id} - Posición:`, carsRef.current[i].position);
+          }
           
           if (carA.isVertical) {
             if (carA.direction == 1) {
@@ -440,9 +467,64 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             }
           }
 
-          let carANearIntersection = false;
+          // Verifica estado de los semáforos
+          let stoppedByLight = false;
+          for (const light of trafficLights) {
+            const stopZone = light.getStopZone();
 
-          // Verificar intersecciones
+            // Solo aplica si el auto va en la misma orientación que el semáforo
+            const dir = light.direction;
+            const isVerticalLight = (dir === 'top' || dir === 'bottom');
+            const matchesDirection =
+                (carA.isVertical && isVerticalLight) ||
+                (!carA.isVertical && !isVerticalLight);
+
+            if (!matchesDirection && !carA.isStopped) continue;
+
+            if (light.isRed()) {
+              const carSensor = carA.getBounds();
+              if (carA.isTurning) continue;
+              if (areRectanglesIntersecting(carSensor, stopZone)) {
+                // Verificamos si el coche ya pasó la intersección
+                const [ix, iy, iw, ih] = light.intersection.dimensions;
+                const carCenter = {
+                  x: carAFrontSensor.x + carAFrontSensor.width / 2,
+                  y: carAFrontSensor.y + carAFrontSensor.height / 2
+                };
+
+                let shouldStop = false;
+
+                if (carA.isVertical) {
+                  if (carA.direction === 1 && carCenter.y < iy) {
+                    shouldStop = true; // Va hacia abajo y aún no entra
+                  }
+                  if (carA.direction === -1 && carCenter.y > iy + ih) {
+                    shouldStop = true; // Va hacia arriba y aún no entra
+                  }
+                } else {
+                  if (carA.direction === 1 && carCenter.x < ix) {
+                    shouldStop = true; // Va hacia la derecha y aún no entra
+                  }
+                  if (carA.direction === -1 && carCenter.x > ix + iw) {
+                    shouldStop = true; // Va hacia la izquierda y aún no entra
+                  }
+                }
+
+                if (shouldStop) {
+                  carA.stop();
+                  stoppedByLight = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Si el coche se detuvo por el semáforo, no realiza las demás validaciones.
+          if (stoppedByLight) continue;
+
+          // Revisión de intersecciones
+          let carANearIntersection = false;
+          let isInIntersection = false;
           for (const [id, intersection] of allIntersectionsRef.current) {
             const intersectionBounds = new PIXI.Rectangle(
               intersection.dimensions[0],
@@ -463,6 +545,47 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
               carANearIntersection = true;
               let shouldCarAStop = false;
 
+              const intersectionInterior = new PIXI.Rectangle(
+                intersection.dimensions[0] + 5,
+                intersection.dimensions[1] + 5,
+                intersection.dimensions[2] - 10,
+                intersection.dimensions[3] - 10
+              );
+
+              if (areRectanglesIntersecting(carA.getBounds(), intersectionInterior)) {
+                isInIntersection = true;
+
+                if (!carA.hasChangedDirection) {
+                  let nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+
+                  if (!nextStreet) {
+                    carA.stopByTraffic();
+                    break;
+                  }
+
+                  if (closedStreetsRef.current.get(nextStreet.id)) {
+                    // Reintentar si la primera opción está cerrada
+                    nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+                    if (!nextStreet) {
+                      carA.stopByTraffic();
+                      break;
+                    }
+                  }
+
+                  if (nextStreet !== carA.currentStreet) {
+                    carA.nextStreet = nextStreet;
+                    carA.setDirectionBasedOnStreet(nextStreet);
+                    carA.hasChangedDirection = true;
+                  } else if (nextStreet == carA.currentStreet) {
+                    // Si no hay otra calle, seguir en la actual
+                    carA.nextStreet = carA.currentStreet;
+                    carA.setDirectionBasedOnStreet(carA.currentStreet);
+                    carA.hasChangedDirection = true;
+                  }
+                  //console.log(carA.currentStreet.id+"  ->  "+carA.nextStreet.id);
+                }
+              }
+              
               for (let j = 0; j < carsRef.current.length; j++) {
                 if (i === j) continue;
 
@@ -501,98 +624,60 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
             }
           }
 
-          // Verificar semáforos
-          for (const light of trafficLights) {
-            const stopZone = light.getStopZone();
-
-            // Solo aplica si el auto va en la misma orientación que el semáforo
-            const dir = light.direction;
-            const isVerticalLight = (dir === 'top' || dir === 'bottom');
-            const matchesDirection =
-                (carA.isVertical && isVerticalLight) ||
-                (!carA.isVertical && !isVerticalLight);
-
-            if (!matchesDirection) continue;
-
-            if (light.isRed()) {
-              const carSensor = carA.getBounds();
-
-              if (areRectanglesIntersecting(carSensor, stopZone)) {
-                // Verificamos si el coche ya pasó la intersección
-                const [ix, iy, iw, ih] = light.intersection.dimensions;
-                const carCenter = {
-                  x: carSensor.x + carSensor.width / 2,
-                  y: carSensor.y + carSensor.height / 2
-                };
-
-                let shouldStop = false;
-
-                if (carA.isVertical) {
-                  if (carA.direction === 1 && carCenter.y < iy) {
-                    shouldStop = true; // Va hacia abajo y aún no entra
-                  }
-                  if (carA.direction === -1 && carCenter.y > iy + ih) {
-                    shouldStop = true; // Va hacia arriba y aún no entra
-                  }
-                } else {
-                  if (carA.direction === 1 && carCenter.x < ix) {
-                    shouldStop = true; // Va hacia la derecha y aún no entra
-                  }
-                  if (carA.direction === -1 && carCenter.x > ix + iw) {
-                    shouldStop = true; // Va hacia la izquierda y aún no entra
-                  }
-                }
-
-                if (shouldStop) {
-                  carA.stop();
-                  break;
-                }
-              }
-            }
-          }
-
-          // Lógica de cambio de calle/intersección
-          let isInIntersection = false;
-
-          for (const [id, intersection] of allIntersectionsRef.current) {
-            const intersectionBounds = new PIXI.Rectangle(
-              intersection.dimensions[0]- 2,
-              intersection.dimensions[1] - 2,
-              intersection.dimensions[2] + 4,
-              intersection.dimensions[3] + 4
-            );
-
-            if (areRectanglesIntersecting(carA.getBounds(), intersectionBounds)) {
-              isInIntersection = true;
-
-              if (!carA.hasChangedDirection) {
-                let nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
-
-                if (closedStreetsRef.current.get(nextStreet.id)) {
-                  // Reintentar si la primera opción está cerrada
-                  nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
-                }
-
-                if (nextStreet !== carA.currentStreet) {
-                  carA.nextStreet = nextStreet;
-                  carA.setDirectionBasedOnStreet(nextStreet);
-                  carA.hasChangedDirection = true;
-                } else {
-                  // Si no hay otra calle, seguir en la actual
-                  carA.nextStreet = carA.currentStreet;
-                  carA.setDirectionBasedOnStreet(carA.currentStreet);
-                }
-                console.log(carA.currentStreet.id+"  ->  "+carA.nextStreet.id);
-              }
-              break;
-            }
-          }
-
           if (!isInIntersection && carA.hasChangedDirection) {
             carA.currentStreet = carA.nextStreet;
             carA.hasChangedDirection = false;
-            console.log("NEW CURRENT STREET: "+carA.currentStreet.id);
+            ////console.log("NEW CURRENT STREET: "+carA.currentStreet.id);
           }
+
+
+          // Lógica de cambio de calle/intersección
+          // let isInIntersection = false;
+
+          // for (const [id, intersection] of allIntersectionsRef.current) {
+          //   const intersectionInterior = new PIXI.Rectangle(
+          //     intersection.dimensions[0] + 5,
+          //     intersection.dimensions[1] + 5,
+          //     intersection.dimensions[2] - 10,
+          //     intersection.dimensions[3] - 10
+          //   );
+
+          //   if (areRectanglesIntersecting(carA.getBounds(), intersectionInterior)) {
+          //     isInIntersection = true;
+
+          //     if (!carA.hasChangedDirection) {
+          //       let nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+
+          //       if (closedStreetsRef.current.get(nextStreet.id)) {
+          //         // Reintentar si la primera opción está cerrada
+          //         nextStreet = decideNextStreet(carA, intersection, closedStreetsRef);
+          //       }
+
+          //       if (nextStreet !== carA.currentStreet) {
+          //         carA.nextStreet = nextStreet;
+          //         carA.setDirectionBasedOnStreet(nextStreet);
+          //         carA.hasChangedDirection = true;
+          //       } else if (nextStreet == carA.currentStreet) {
+          //         // Si no hay otra calle, seguir en la actual
+                  
+
+                  
+          //         carA.nextStreet = carA.currentStreet;
+          //         carA.setDirectionBasedOnStreet(carA.currentStreet);
+          //       } else { // Caso nulll
+          //         carA.stop();
+          //       }
+          //       //console.log(carA.currentStreet.id+"  ->  "+carA.nextStreet.id);
+          //     }
+          //     break;
+          //   }
+          // }
+
+          // if (!isInIntersection && carA.hasChangedDirection) {
+          //   carA.currentStreet = carA.nextStreet;
+          //   carA.hasChangedDirection = false;
+          //   //console.log("NEW CURRENT STREET: "+carA.currentStreet.id);
+          // }
 
           //Al final, actualiza la posición del coche según las decisiones tomadas a partir de los elementos del mapa
           carA.update(deltaTime, app.screen);

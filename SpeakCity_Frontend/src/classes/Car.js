@@ -27,6 +27,7 @@ export class Car extends PIXI.Sprite {
     this.nextStreet = nextStreet;
     this.hasChangedDirection = false;
 
+    this.startTurnU = false;
     this.isTurning = false;
     this.turnTime = 0;
     this.turnDuration = 30;
@@ -177,11 +178,16 @@ export class Car extends PIXI.Sprite {
   setDirectionBasedOnStreet(nextStreet) {
     if (!nextStreet) return;
 
+    if (nextStreet == this.currentStreet){
+      this.startTurnU = true;
+      return;
+    }
+
     const [streetX, streetY, streetWidth, streetHeight] = nextStreet.dimensions;
     const comingFromVertical = this.isVertical;
     const goingToVertical = (nextStreet.orientation === 'vertical');
 
-    console.log("Posicion actual del coche : " + this.x + ","+this.y);
+    //console.log("Posicion actual del coche : " + this.x + ","+this.y);
     // Giro de horizontal -> vertical
     if (!comingFromVertical && goingToVertical) {
       this.isVertical = true;
@@ -254,8 +260,8 @@ export class Car extends PIXI.Sprite {
   }
 
   update(deltaTime, appScreen) {
-    const giroOffset = 20;
-    const margen = 10;
+    const giroOffset = 15;
+    const margen = halfWidthStreets;
 
     // Animación de giro
     if (this.isTurning) {
@@ -286,46 +292,57 @@ export class Car extends PIXI.Sprite {
 
     if (this.isStopped) return;
 
-    //Quité todos los scale.x *= -1 y scale.y *= -1
     if (!this.isVertical) {
       // Horizontal
       this.x += this.speed * this.direction * deltaTime;
 
-      // derecha → izquierda (rebote en borde derecho)
-      if (this.direction === 1 && this.x > appScreen.width - margen) {
-        this.direction = -1; // invierte sentido
-        const p0 = { x: this.x, y: this.y };
-        const p1 = { x: this.x + 20, y: this.y + 40 }; // control para curvar
-        const p2 = { x: appScreen.width - margen - giroOffset, y: this.y + halfWidthStreets };
-        this.startUTurn([p0, p1, p2]);
-      }
-      // izquierda → derecha (rebote en borde izquierdo)
-      else if (this.direction === -1 && this.x < margen) {
-        this.direction = 1; // invierte sentido
-        const p0 = { x: this.x, y: this.y };
-        const p1 = { x: this.x - 20, y: this.y - 40 };
-        const p2 = { x: margen + giroOffset, y: this.y - halfWidthStreets };
-        this.startUTurn([p0, p1, p2]);
+      // Inicia vuelta en U para el caso de la única calle disponible es la actual
+      if (this.startTurnU){
+        this.startTurnU = false;
+        // derecha → izquierda (rebote en borde derecho)
+        if (this.direction === 1 ) {
+          this.direction = -1; // invierte sentido
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x + 10, y: this.y + halfWidthStreets*0.5 }; // control para curvar
+          const p2 = { x: this.x, y: this.y + halfWidthStreets };
+          this.startUTurn([p0, p1, p2]);
+        }
+        // izquierda → derecha (rebote en borde izquierdo)
+        else if (this.direction === -1) {
+          this.direction = 1; // invierte sentido
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x - 10, y: this.y - halfWidthStreets*0.5 };
+          const p2 = { x: this.x, y: this.y - halfWidthStreets };
+          this.startUTurn([p0, p1, p2]);
+        }
+        this.startTurnU = false;
       }
     } else {
       // Vertical
       this.y += this.speed * this.direction * deltaTime;
 
-      // abajo → arriba (rebote en borde inferior)
-      if (this.direction === 1 && this.y > appScreen.height - margen) {
-        this.direction = -1; // invierte sentido
-        const p0 = { x: this.x, y: this.y };
-        const p1 = { x: this.x + 40, y: this.y + 20 };
-        const p2 = { x: this.x + halfWidthStreets, y: appScreen.height - margen - giroOffset };
-        this.startUTurn([p0, p1, p2]);
-      }
-      // arriba → abajo (rebote en borde superior)
-      else if (this.direction === -1 && this.y < margen) {
-        this.direction = 1; // invierte sentido
-        const p0 = { x: this.x, y: this.y };
-        const p1 = { x: this.x - 40, y: this.y - 20 };
-        const p2 = { x: this.x - halfWidthStreets, y: margen + giroOffset };
-        this.startUTurn([p0, p1, p2]);
+      // Inicia vuelta en U para el caso de la única calle disponible es la actual
+      if (this.startTurnU){
+        //this.startTurnU = false;
+        // abajo → arriba (rebote en borde inferior)
+        if (this.direction === 1 ) {
+          this.direction = -1; // invierte sentido
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x + halfWidthStreets*0.5, y: this.y + 10};
+          const p2 = { x: this.x + halfWidthStreets, y: this.y };
+          this.startUTurn([p0, p1, p2]);
+        }
+        // arriba → abajo (rebote en borde superior)
+        else if (this.direction === -1 ) {
+          this.direction = 1; // invierte sentido
+          const p0 = { x: this.x, y: this.y };
+          const p1 = { x: this.x - halfWidthStreets*0.5, y: this.y - 10 };
+          const p2 = { x: this.x - halfWidthStreets, y: this.y};
+          console.log("Posicion actual del coche : " + this.x + ","+this.y);
+          console.log("P0 " + p0.x +","+p0.y+"  P1 " + p1.x +","+p1.y + ", P2 " + p2.x +","+p2.y);
+          this.startUTurn([p0, p1, p2]);
+        }
+        this.startTurnU = false;
       }
     }
   }
