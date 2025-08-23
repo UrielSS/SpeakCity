@@ -11,7 +11,7 @@ function ChatBox() {
   const [ejecutandoComandos, setEjecutandoComandos] = useState(false);
   const [comandosEnProceso, setComandosEnProceso] = useState([]);
   const { closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
-          deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval
+          deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, openAllStreets
    } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
@@ -118,8 +118,9 @@ function ChatBox() {
       activateTrafficLight(calle);
     } else if (accion == 'programar_semaforo') {
       changeTrafficLightTimeInterval(calle, duracion_estimada_segundos);
+    } else if (accion == 'abrir_todas_calles') {
+      openAllStreets();
     }
-
 
   };
 
@@ -300,7 +301,7 @@ function ChatBox() {
   const getStatusMessage = () => {
     switch (backendStatus) {
       case 'connected':
-        return { text: '✅ Conectado al backend', class: 'status-connected' };
+        return { text: '✅ Conexióin exitosa', class: 'status-connected' };
       case 'demo':
         return { text: '🔄 Modo demo activo', class: 'status-demo' };
       case 'error':

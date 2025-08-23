@@ -48,6 +48,51 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
     }
   };
 
+  // Función para obtener todas las calles cerradas
+const getClosedStreets = (closedStreets = closedStreetsRef.current) => {
+  const closedStreetsList = [];
+  for (const [streetName, isClosed] of closedStreets) {
+    if (isClosed && !excludedStreets.has(streetName)) {
+      closedStreetsList.push(streetName);
+    }
+  }
+  return closedStreetsList;
+};
+
+// Función para abrir todas las calles cerradas
+const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
+  const closedStreetsList = getClosedStreets(closedStreets);
+  
+  if (closedStreetsList.length === 0) {
+    console.log("No hay calles cerradas para abrir.");
+    return {
+      success: true,
+      message: "No hay calles cerradas",
+      streetsOpened: []
+    };
+  }
+
+  const streetsOpened = [];
+  
+  for (const streetName of closedStreetsList) {
+    const streetToOpen = allStreets.get(streetName);
+    if (streetToOpen && closedStreets.has(streetName)) {
+      streetToOpen.toggleClosed();
+      closedStreets.delete(streetName);
+      streetsOpened.push(streetName);
+      // console.log(`Calle ${streetName} reabierta.`);
+    }
+  }
+  
+  // console.log(`Se reabrieron ${streetsOpened.length} calles: ${streetsOpened.join(', ')}`);
+  
+  return {
+    success: true,
+    message: `Se reabrieron ${streetsOpened.length} calles`,
+    streetsOpened: streetsOpened
+  };
+};
+
   const changeTrafficLight_red = (nameTrafficLight) => {
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
     trafficLightModify.setState('red');
@@ -688,7 +733,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
     initPixiApp();
 
     setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
-                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval });
+                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, openAllStreets, getClosedStreets});
     
     const interval = setInterval(() => {
       // Número de carros

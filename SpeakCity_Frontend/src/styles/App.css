@@ -396,7 +396,7 @@
 /* Escritorio grande*/
 @media (min-width: 1600px) {
   #root, .app-container, .main-content {
-    max-width: 1700px;
+    max-width: 2000px;
     padding-left: 1vw;
     padding-right: 1vw;
   }

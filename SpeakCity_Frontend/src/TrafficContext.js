@@ -7,5 +7,6 @@ export const TrafficContext = createContext({
   changeTrafficLight_green: () => {},
   deactivateTrafficLight: () => {},
   activateTrafficLight: () => {},
-  changeTrafficLightTimeInterval: () => {}
+  changeTrafficLightTimeInterval: () => {},
+  openAllStreets: () => {},
 });
