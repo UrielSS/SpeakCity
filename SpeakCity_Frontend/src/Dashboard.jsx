@@ -27,6 +27,23 @@ function Dashboard({ numCarros, callesAbiertas, callesCerradas }) {
                     <p>{callesCerradas}</p>
                 </div>
             </div>
+
+            <div className="dashboard-card green-light">
+                <div className="icon">🚦✅</div>
+                <div>
+                    <h3>Semáforos Habilitados</h3>
+                    <p>-</p>
+                </div>
+            </div>
+
+            <div className="dashboard-card red-light">
+                <div className="icon">🚦❌</div>
+                <div>
+                    <h3>Semáforos Deshabilitados</h3>
+                    <p>-</p>
+                </div>
+            </div>
+
         </div>
     </section>
   )

@@ -28,6 +28,10 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const trafficLights = [];
   const trafficLights_deactivated = [];
 
+  // Init Traffic Lights Default
+  const trafficLights_intersectionInit = ["I22", "I21"];
+
+
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
     if (!streetToClose || closedStreets.has(nameStreet)) return;
@@ -275,15 +279,12 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       setComplex(blockContainer);
 
       for (const [id, intersection] of allIntersectionsRef.current) {
-        if (!["I22", "I21", "I12"].includes(id)) continue;
-        
+
         // 4 lados por intersección
         const topLight = new TrafficLight(intersection, 'top', streetContainer);
         const bottomLight = new TrafficLight(intersection, 'bottom', streetContainer);
         const leftLight = new TrafficLight(intersection, 'left', streetContainer);
         const rightLight = new TrafficLight(intersection, 'right', streetContainer);
-
-        trafficLights.push(topLight, bottomLight, leftLight, rightLight);
 
         const semaforos = [
           { light: topLight, initial: 'green' },
@@ -296,6 +297,18 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
           light.setState(initial);
           light.startTimer();
         }
+
+        if (trafficLights_intersectionInit.includes(id)) { // Add to Traffic Lights Activated
+          trafficLights.push(topLight, bottomLight, leftLight, rightLight);
+        }
+        else { // Add to Traffic Lights Deactivated
+          topLight.deactivate();
+          bottomLight.deactivate();
+          leftLight.deactivate();
+          rightLight.deactivate();
+          trafficLights_deactivated.push(topLight, bottomLight, leftLight, rightLight);
+        }
+
       }
 
       // Creación de carros

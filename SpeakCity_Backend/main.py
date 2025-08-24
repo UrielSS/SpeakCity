@@ -49,11 +49,20 @@ CAUSAS_VALIDAS = [
 CALLES_VALIDAS = ['H10', 'H11', 'H12', 'H13', 'H20', 'H21', 'H22', 'H23', 'H30', 'H31', 'H32', 'H33',
                     'V10', 'V11', 'V12', 'V13', 'V20', 'V21', 'V22', 'V23', 'V30', 'V31', 'V32', 'V33']
 
-SEMAFOROS_VALIDOS = [
-                    'I22 top', 'I22 right', 'I22 bottom', 'I22 left',
-                    'I21 top', 'I21 right', 'I21 bottom', 'I21 left',
-                    'I12 top', 'I12 right', 'I12 bottom', 'I12 left'
-                    ]
+SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04', 
+                    'I10', 'I11', 'I12', 'I13', 'I14',
+                    'I20', 'I21', 'I22', 'I23', 'I24',
+                    'I30', 'I31', 'I32', 'I33', 'I34',
+                    'I40', 'I41', 'I42', 'I43', 'I44']
+
+SEMAFOROS_VALIDOS_COPY = []
+for item in SEMAFOROS_VALIDOS:
+    SEMAFOROS_VALIDOS_COPY.append(item + ' top')
+    SEMAFOROS_VALIDOS_COPY.append(item + ' right')
+    SEMAFOROS_VALIDOS_COPY.append(item + ' bottom')
+    SEMAFOROS_VALIDOS_COPY.append(item + ' left')
+SEMAFOROS_VALIDOS = SEMAFOROS_VALIDOS_COPY
+
 
 class ComandoTrafico(BaseModel):
     accion: str = Field(..., description="Acción específica a realizar en el sistema de tráfico")

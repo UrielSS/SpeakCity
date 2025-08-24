@@ -7,9 +7,9 @@ import TrafficSimulation from './TrafficSimulation';
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-  const [numCarros, setNumCarros] = useState(0)
-  const [callesAbiertas, setCallesAbiertas] = useState(0)
-  const [callesCerradas, setCallesCerradas] = useState(0)
+  const [numCarros, setNumCarros] = useState(0);
+  const [callesAbiertas, setCallesAbiertas] = useState(0);
+  const [callesCerradas, setCallesCerradas] = useState(0);
   const [trafficAPI, setTrafficAPI] = React.useState({});
 
   return (
