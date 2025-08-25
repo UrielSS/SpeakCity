@@ -81,6 +81,7 @@ class ComandoTrafico(BaseModel):
     prioridad: Optional[str] = Field(default="media", description="Prioridad del comando: baja, media, alta, critica")
     duracion_estimada: Optional[int] = Field(default=None, description="Duración estimada en minutos")
     duracion_estimada_segundos: Optional[int] = Field(default=None, description="Duración estimada del intervalo de cambio del semaforo en segundos")
+    flujo_vehicular: Optional[int] = Field(default=0, description="Densidad del trafico")
     orden_ejecucion: Optional[int] = Field(default=1, description="Orden de ejecución del comando")
 
     @validator('accion')
