@@ -35,7 +35,7 @@ else:
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo_rojo', 'cambiar_semaforo_verde', 'activar_semaforo', 'desactivar_semaforo', 
                     'programar_semaforo'],
-    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo'],
+    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo', 'abrir_todas_calles'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
     'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia']
@@ -46,8 +46,17 @@ CAUSAS_VALIDAS = [
     'mantenimiento', 'emergencia', 'hora_pico', 'bloqueo_temporal', 'optimizacion_flujo'
 ]
 
-CALLES_VALIDAS = ['H10', 'H11', 'H12', 'H13', 'H20', 'H21', 'H22', 'H23', 'H30', 'H31', 'H32', 'H33',
-                    'V10', 'V11', 'V12', 'V13', 'V20', 'V21', 'V22', 'V23', 'V30', 'V31', 'V32', 'V33']
+CALLES_VALIDAS = [
+                    'H00', 'H01', 'H02', 'H03',
+                    'H10', 'H13', 
+                    'H20', 'H21', 'H22', 'H23',
+                    'H32', 'H33',
+                    'V00', 'V01', 'V02', 'V03',
+                    'V10', 'V11', 'V12', 'V13',
+                    'V20', 'V21', 'V22', 'V23',
+                    'V30', 'V31', 'V33', 
+                    'V40', 'V41', 'V42', 'V43'
+                ]
 
 SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04', 
                     'I10', 'I11', 'I12', 'I13', 'I14',
@@ -84,8 +93,11 @@ class ComandoTrafico(BaseModel):
     @validator('calle')
     def validar_calle(cls, v):
         v = v.strip().upper()
+        # Para la acción 'abrir_todas_calles', permitir 'TODAS' como valor especial
+        if v == 'TODAS':
+            return v
         if not (v in CALLES_VALIDAS or v in [s.upper() for s in SEMAFOROS_VALIDOS]):
-            raise ValueError(f"Calle '{v}' no válida. Usa calles como V1–V4 o H1–H3.")
+            raise ValueError(f"Calle '{v}' no válida. Usa calles como V1—V4 o H1—H3.")
         return v
 
     @validator('causa')
@@ -112,10 +124,12 @@ class RespuestaMultipleComandos(BaseModel):
 def es_comando_trafico_valido(mensaje: str) -> bool:
     """Validamos si el mensaje está relacionado con tráfico"""
     palabras_trafico = [
-        'semaforo', 'trafico', 'calle', 'avenida', 'carril', 'congestion',
+        'semaforo', 'tráfico', 'calle', 'avenida', 'carril', 'congestion',
         'accidente', 'velocidad', 'flujo', 'interseccion', 'via', 'ruta',
         'bloqueo', 'emergencia', 'construccion', 'mantenimiento', 'abrir', 
-        'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque', 
+        'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque',
+        'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre',
+        'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra'
     ]
     
     mensaje_lower = mensaje.lower()
@@ -141,7 +155,7 @@ IMPORTANTE:
 
 COMANDOS VÁLIDOS:
 1. SEMÁFOROS: {ACCIONES_VALIDAS['semaforo']}
-2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo  
+2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo, abrir_todas_calles
 3. INCIDENTES: reportar_incidente, limpiar_incidente, bloquear_via, desbloquear_via
 4. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
 5. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
@@ -150,12 +164,18 @@ CAUSAS VÁLIDAS: {CAUSAS_VALIDAS}
 CALLES PERMITIDAS: {CALLES_VALIDAS}
 SEMAFOROS VALIDOS: {SEMAFOROS_VALIDOS}
 
+COMANDO ESPECIAL:
+- Para abrir TODAS las calles cerradas, usa: accion='abrir_todas_calles', calle='TODAS'
+- Este comando detecta frases como: "abrir todas las calles", "reabrir todas las vías", "normalizar tráfico", "restablecer todas las calles"
+-
+
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
 2. Reportar incidentes (orden_ejecucion: 2)
 3. Bloqueos/cierres (orden_ejecucion: 3)
 4. Cambios de semáforos (orden_ejecucion: 4)
 5. Redirecciones de tráfico (orden_ejecucion: 5)
+6. Abrir todas las calles (orden_ejecucion: 6)
 
 ENTRADA: "{mensaje}"
 
@@ -167,6 +187,18 @@ def generar_respuesta_demo_multiple(mensaje: str) -> Dict[str, Any]:
     mensaje_lower = mensaje.lower()
     comandos = []
     orden = 1
+    
+    # Detectar comando para abrir todas las calles
+    if any(frase in mensaje_lower for frase in ['abrir todas', 'todas las calles', 'reabrir todas', 'normalizar trafico', 'restablecer']):
+        comandos.append({
+            'accion': 'abrir_todas_calles',
+            'calle': 'TODAS',
+            'causa': 'optimizacion_flujo',
+            'prioridad': 'alta',
+            'duracion_estimada': 5,
+            'orden_ejecucion': orden
+        })
+        orden += 1
     
     # Detectar múltiples acciones en el mensaje
     if 'accidente' in mensaje_lower or 'choque' in mensaje_lower:
@@ -256,7 +288,7 @@ def hello_world():
         'timestamp': datetime.now().isoformat(),
         'demo_mode': DEMO_MODE,
         'api_status': 'Configurada' if not DEMO_MODE else 'Demo Mode',
-        'features': ['single_command', 'multiple_commands', 'priority_ordering']
+        'features': ['single_command', 'multiple_commands', 'priority_ordering', 'open_all_streets']
     })
 
 
@@ -441,7 +473,7 @@ CONTEXTO ESPECÍFICO:
 
 COMANDOS VÁLIDOS:
 1. SEMÁFOROS: cambiar_semaforo, activar_semaforo, desactivar_semaforo, programar_semaforo
-2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo  
+2. FLUJO: abrir_calle, cerrar_calle, redirigir_trafico, controlar_flujo, abrir_todas_calles
 3. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
 4. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
 

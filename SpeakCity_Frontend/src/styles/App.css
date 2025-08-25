@@ -1,6 +1,4 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
@@ -408,7 +406,7 @@
 /* Escritorio grande*/
 @media (min-width: 1600px) {
   #root, .app-container, .main-content {
-    max-width: 1700px;
+    max-width: 2000px;
     padding-left: 1vw;
     padding-right: 1vw;
   }
@@ -417,7 +415,7 @@
 /* Escritorio normal */
 @media (min-width: 1200px) and (max-width: 1599px) {
   #root, .app-container, .main-content {
-    max-width: 1200px;
+    max-width: 2000px;
     padding-left: 1vw;
     padding-right: 1vw;
   }
