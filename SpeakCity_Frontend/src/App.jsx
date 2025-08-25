@@ -77,6 +77,10 @@ function App() {
         </TrafficContext.Provider>
       </main>
 
+      <footer className="app-footer">
+        <p>Hecho por los PowerPuffGs ❤️</p>
+      </footer>
+      
     </div>
   );
 }
