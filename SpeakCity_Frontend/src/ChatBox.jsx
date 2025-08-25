@@ -11,7 +11,8 @@ function ChatBox() {
   const [ejecutandoComandos, setEjecutandoComandos] = useState(false);
   const [comandosEnProceso, setComandosEnProceso] = useState([]);
   const { closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
-          deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, openAllStreets
+          deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, 
+          openAllStreets, changeDensity
    } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
@@ -94,7 +95,7 @@ function ChatBox() {
 
   // Función para aplicar un comando individual(Aca puede ir lo de los semaforos tambien y lo de desviar trafico)
   const aplicarComandoIndividual = (comando) => {
-    const { accion, calle, causa, duracion_estimada, duracion_estimada_segundos } = comando;
+    const { accion, calle, causa, duracion_estimada, duracion_estimada_segundos, densidad_vehicular } = comando;
 
     if (
       accion === 'cerrar_calle' ||
@@ -120,7 +121,15 @@ function ChatBox() {
       changeTrafficLightTimeInterval(calle, duracion_estimada_segundos);
     } else if (accion == 'abrir_todas_calles') {
       openAllStreets();
+    } else if (
+      accion === 'trafico_bajo' ||
+      accion === 'trafico_medio' ||
+      accion === 'trafico_alto'
+    ) {
+      console.log("Cambio de trafico a",densidad_vehicular);
+      changeDensity(densidad_vehicular);
     }
+    
 
   };
 
@@ -301,7 +310,7 @@ function ChatBox() {
   const getStatusMessage = () => {
     switch (backendStatus) {
       case 'connected':
-        return { text: '✅ Conexióin exitosa', class: 'status-connected' };
+        return { text: '✅ Conexión exitosa', class: 'status-connected' };
       case 'demo':
         return { text: '🔄 Modo demo activo', class: 'status-demo' };
       case 'error':

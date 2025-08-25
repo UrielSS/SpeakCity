@@ -38,7 +38,8 @@ ACCIONES_VALIDAS = {
     'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo', 'abrir_todas_calles'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
-    'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia']
+    'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia'],
+    'densidad': ['trafico_alto', 'trafico_medio', 'trafico_bajo']
 }
 
 CAUSAS_VALIDAS = [
@@ -81,7 +82,7 @@ class ComandoTrafico(BaseModel):
     prioridad: Optional[str] = Field(default="media", description="Prioridad del comando: baja, media, alta, critica")
     duracion_estimada: Optional[int] = Field(default=None, description="Duración estimada en minutos")
     duracion_estimada_segundos: Optional[int] = Field(default=None, description="Duración estimada del intervalo de cambio del semaforo en segundos")
-    flujo_vehicular: Optional[int] = Field(default=0, description="Densidad del trafico")
+    densidad_vehicular: Optional[int] = Field(default=0, description="Densidad del trafico: bajo, medio, alto")
     orden_ejecucion: Optional[int] = Field(default=1, description="Orden de ejecución del comando")
 
     @validator('accion')
@@ -117,6 +118,7 @@ class ComandoTrafico(BaseModel):
                 raise ValueError("Prioridad debe ser: baja, media, alta o critica")
         return v
 
+
 # Nueva clase para manejar múltiples comandos
 class RespuestaMultipleComandos(BaseModel):
     comandos: List[ComandoTrafico] = Field(..., description="Lista de comandos de tráfico a ejecutar")
@@ -131,7 +133,8 @@ def es_comando_trafico_valido(mensaje: str) -> bool:
         'bloqueo', 'emergencia', 'construccion', 'mantenimiento', 'abrir', 
         'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque',
         'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre',
-        'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra'
+        'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra',
+        'alto', 'medio', 'bajo'
     ]
     
     mensaje_lower = mensaje.lower()
@@ -161,6 +164,7 @@ COMANDOS VÁLIDOS:
 3. INCIDENTES: reportar_incidente, limpiar_incidente, bloquear_via, desbloquear_via
 4. VELOCIDAD: cambiar_limite, zona_escolar, reducir_velocidad, aumentar_velocidad
 5. EMERGENCIA: activar_emergencia, desactivar_emergencia, via_emergencia
+6. TRAFICO: trafico_alto, trafico_medio, trafico_bajo
 
 CAUSAS VÁLIDAS: {CAUSAS_VALIDAS}
 CALLES PERMITIDAS: {CALLES_VALIDAS}
@@ -169,7 +173,7 @@ SEMAFOROS VALIDOS: {SEMAFOROS_VALIDOS}
 COMANDO ESPECIAL:
 - Para abrir TODAS las calles cerradas, usa: accion='abrir_todas_calles', calle='TODAS'
 - Este comando detecta frases como: "abrir todas las calles", "reabrir todas las vías", "normalizar tráfico", "restablecer todas las calles"
-- En caso de que se reciba una orden de estilo "Cierra las H3 o V2", se deben de interpretar como las CALLES PERMITIDAS con ese subindice, por ejemplo: H3 -> H32, H33 y V2 -> V22, V23
+- De acuerdo al trafico devuelve densidad_vehicular como un valor numerico en los casos "alto"=2, "medio"=1, "bajo"=0
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
