@@ -28,7 +28,6 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const closedStreetsRef = useRef(new Map());
   const trafficLights = [];
   const trafficLights_deactivated = [];
-  let totalCars = carsGenerated(3);
 
   // Init Traffic Lights Default
   const trafficLights_intersectionInit = ["I22", "I21"];
@@ -178,6 +177,26 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     return trafficLightModify;
   };
 
+  //funcion de carros por calle (por agregar a backend)
+  const changeDensity = (density) =>{
+    var total = 0;
+    switch(density){
+      case 0:
+        total = 1;
+        break;
+      case 1:
+        total = 2;
+        break;
+      case 2:
+        total = 3;
+        break;
+      default:
+        total = 1;
+        break;
+    }
+    return total;
+  };
+
   // Nueva función para manejar la detección de colisiones entre coches
   const handleCarToCarCollisions = (cars) => {
     for (let i = 0; i < cars.length; i++) {
@@ -220,6 +239,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     }
   };
 
+  /*
   //funcion de carros por calle (por agregar a backend)
   function carsGenerated(density){
     var total = 0;
@@ -238,7 +258,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
         break;
     }
     return total;
-  };
+  };*/
 
 
   useEffect(() => {
@@ -545,6 +565,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       setSemaforosInhabilit(trafficLights_deactivated.length);
 
       //let totalCars = carsGenerated(0);
+      var totalCars = changeDensity(2);
       const cars = createCars(hortBlocks, vertBlocks, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, totalCars);
       carsRef.current = cars;
       /*
@@ -939,7 +960,8 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     initPixiApp();
 
     setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
-                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, openAllStreets, getClosedStreets});
+                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, 
+                    openAllStreets, getClosedStreets, changeDensity});
     
     const interval = setInterval(() => {
       // Número de carros
