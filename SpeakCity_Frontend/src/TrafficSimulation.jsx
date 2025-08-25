@@ -12,7 +12,7 @@ import {
 } from "./utils/utils";
 import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/constants";
 
-  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
+  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars, setSemaforosHabilit, setSemaforosInhabilit}) => {
 
   const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
   const { wVS, wHS } = CALCULATED_VALUES;
@@ -71,6 +71,8 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       trafficLights.splice(index, 1);
       trafficLights_deactivated.push(trafficLightModify);
       trafficLightModify.deactivate();
+      setSemaforosHabilit(trafficLights.length);
+      setSemaforosInhabilit(trafficLights_deactivated.length);
     }
   };
 
@@ -81,6 +83,8 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
       trafficLights_deactivated.splice(index, 1);
       trafficLights.push(trafficLightModify);
       trafficLightModify.activate();
+      setSemaforosHabilit(trafficLights.length);
+      setSemaforosInhabilit(trafficLights_deactivated.length);
     }
   };
 
@@ -308,8 +312,9 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
           rightLight.deactivate();
           trafficLights_deactivated.push(topLight, bottomLight, leftLight, rightLight);
         }
-
       }
+      setSemaforosHabilit(trafficLights.length);
+      setSemaforosInhabilit(trafficLights_deactivated.length);
 
       // Creación de carros
       const cars = [];

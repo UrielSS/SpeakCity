@@ -10,6 +10,8 @@ function App() {
   const [numCarros, setNumCarros] = useState(0);
   const [callesAbiertas, setCallesAbiertas] = useState(0);
   const [callesCerradas, setCallesCerradas] = useState(0);
+  const [semaforosHabilitados, setSemaforosHabilitados] = useState(0);
+  const [semaforosInhabilitados, setSemaforosInhabilitados] = useState(0);
   const [trafficAPI, setTrafficAPI] = React.useState({});
 
   return (
@@ -56,7 +58,9 @@ function App() {
                 <TrafficSimulation setTrafficAPI={setTrafficAPI}
                   setCloseStreets={(n) => setCallesCerradas(n)}
                   setOpenStreets={(n) => setCallesAbiertas(n)}
-                  setNumCars={(n) => setNumCarros(n)} />
+                  setNumCars={(n) => setNumCarros(n)} 
+                  setSemaforosHabilit={(n) => setSemaforosHabilitados(n)}
+                  setSemaforosInhabilit={(n) => setSemaforosInhabilitados(n)}/>
               </div>
             </section>
           </div>
@@ -66,6 +70,8 @@ function App() {
             numCarros={numCarros}
             callesAbiertas={callesAbiertas}
             callesCerradas={callesCerradas}
+            numSemaforosHabilitados={semaforosHabilitados}
+            numSemaforosInhabilitados={semaforosInhabilitados}
           />
 
         </TrafficContext.Provider>

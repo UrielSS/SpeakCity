@@ -1,4 +1,4 @@
-function Dashboard({ numCarros, callesAbiertas, callesCerradas }) {
+function Dashboard({ numCarros, callesAbiertas, callesCerradas, numSemaforosHabilitados, numSemaforosInhabilitados }) {
   return (
     <section className="dashboard-wrapper">
         <h2 className="dashboard-title">Dashboard</h2>
@@ -32,7 +32,7 @@ function Dashboard({ numCarros, callesAbiertas, callesCerradas }) {
                 <div className="icon">🚦✅</div>
                 <div>
                     <h3>Semáforos Habilitados</h3>
-                    <p>-</p>
+                    <p>{numSemaforosHabilitados}</p>
                 </div>
             </div>
 
@@ -40,7 +40,7 @@ function Dashboard({ numCarros, callesAbiertas, callesCerradas }) {
                 <div className="icon">🚦❌</div>
                 <div>
                     <h3>Semáforos Deshabilitados</h3>
-                    <p>-</p>
+                    <p>{numSemaforosInhabilitados}</p>
                 </div>
             </div>
 
