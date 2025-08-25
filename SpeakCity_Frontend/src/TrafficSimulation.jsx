@@ -27,7 +27,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const closedStreetsRef = useRef(new Map());
   const trafficLights = [];
   const trafficLights_deactivated = [];
-  let totalCars = carsGenerated(0);
+  let totalCars = carsGenerated(3);
 
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
@@ -166,45 +166,6 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
     }
     return total;
   };
-
-  function refillStreets(closedStreets = closedStreetsRef.current, allStreets = allStreetsRef.current) {
-    // Limpiar todas las superposiciones existentes primero
-    clearAllStreetOverlays(allStreets);
-    
-    // Pintar todas las calles cerradas
-    closedStreets.forEach((isClosed, streetName) => {
-        if (isClosed) {
-            const street = allStreets.get(streetName);
-            if (street && !street.isClosed) {
-                // Forzar el estado cerrado y pintar
-                street.isClosed = true;
-                const overlayName = `closed_overlay_${street.id}`;
-                
-                // Crear y añadir el gráfico de cierre
-                let closedStreetGraphic = createStreetGraphic(street.dimensions, 0xE4080A);
-                closedStreetGraphic.name = overlayName;
-                street.container.addChild(closedStreetGraphic);
-                
-                console.log(`Repintada calle ${streetName} como cerrada`);
-            }
-        }
-    });
-}
-
-function clearAllStreetOverlays(allStreets = allStreetsRef.current) {
-    allStreets.forEach((street, streetName) => {
-        const overlayName = `closed_overlay_${street.id}`;
-        const existingOverlay = street.container.getChildByName(overlayName);
-        
-        if (existingOverlay) {
-            street.container.removeChild(existingOverlay);
-            existingOverlay.destroy();
-        }
-        
-        // Resetear el estado visual (no el lógico)
-        street.isClosed = false;
-    });
-}
 
   useEffect(() => {
 
