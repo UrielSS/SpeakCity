@@ -8,12 +8,11 @@ import {
   drawStreets, 
   drawIntersections,
   setComplex, 
-  setNameStreets,
-  setNameIntersections
+  setNameStreets 
 } from "./utils/utils";
 import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/constants";
 
-  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars, setSemaforosHabilit, setSemaforosInhabilit}) => {
+  const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, setNumCars }) => {
 
   const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
   const { wVS, wHS } = CALCULATED_VALUES;
@@ -28,10 +27,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const closedStreetsRef = useRef(new Map());
   const trafficLights = [];
   const trafficLights_deactivated = [];
-
-  // Init Traffic Lights Default
-  const trafficLights_intersectionInit = ["I22", "I21"];
-
+  let totalCars = carsGenerated(0);
 
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
@@ -53,51 +49,6 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
     }
   };
 
-  // Función para obtener todas las calles cerradas
-const getClosedStreets = (closedStreets = closedStreetsRef.current) => {
-  const closedStreetsList = [];
-  for (const [streetName, isClosed] of closedStreets) {
-    if (isClosed && !excludedStreets.has(streetName)) {
-      closedStreetsList.push(streetName);
-    }
-  }
-  return closedStreetsList;
-};
-
-// Función para abrir todas las calles cerradas
-const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
-  const closedStreetsList = getClosedStreets(closedStreets);
-  
-  if (closedStreetsList.length === 0) {
-    console.log("No hay calles cerradas para abrir.");
-    return {
-      success: true,
-      message: "No hay calles cerradas",
-      streetsOpened: []
-    };
-  }
-
-  const streetsOpened = [];
-  
-  for (const streetName of closedStreetsList) {
-    const streetToOpen = allStreets.get(streetName);
-    if (streetToOpen && closedStreets.has(streetName)) {
-      streetToOpen.toggleClosed();
-      closedStreets.delete(streetName);
-      streetsOpened.push(streetName);
-      // console.log(`Calle ${streetName} reabierta.`);
-    }
-  }
-  
-  // console.log(`Se reabrieron ${streetsOpened.length} calles: ${streetsOpened.join(', ')}`);
-  
-  return {
-    success: true,
-    message: `Se reabrieron ${streetsOpened.length} calles`,
-    streetsOpened: streetsOpened
-  };
-};
-
   const changeTrafficLight_red = (nameTrafficLight) => {
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
     trafficLightModify.setState('red');
@@ -117,8 +68,6 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       trafficLights.splice(index, 1);
       trafficLights_deactivated.push(trafficLightModify);
       trafficLightModify.deactivate();
-      setSemaforosHabilit(trafficLights.length);
-      setSemaforosInhabilit(trafficLights_deactivated.length);
     }
   };
 
@@ -129,8 +78,6 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       trafficLights_deactivated.splice(index, 1);
       trafficLights.push(trafficLightModify);
       trafficLightModify.activate();
-      setSemaforosHabilit(trafficLights.length);
-      setSemaforosInhabilit(trafficLights_deactivated.length);
     }
   };
 
@@ -156,6 +103,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     }
     return trafficLightModify;
   };
+
 
   // Nueva función para manejar la detección de colisiones entre coches
   const handleCarToCarCollisions = (cars) => {
@@ -199,7 +147,170 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     }
   };
 
+  //Funcion para obtener el total de carros agregados en la funcion (por agregar a backend)
+  function carsGenerated(density){
+    var total = 0;
+    switch(density){
+      case 0:
+        total = 1;
+        break;
+      case 1:
+        total = 2;
+        break;
+      case 2:
+        total = 3;
+        break;
+      default:
+        total = 1;
+        break;
+    }
+    return total;
+  };
+
+  function refillStreets(closedStreets = closedStreetsRef.current, allStreets = allStreetsRef.current) {
+    // Limpiar todas las superposiciones existentes primero
+    clearAllStreetOverlays(allStreets);
+    
+    // Pintar todas las calles cerradas
+    closedStreets.forEach((isClosed, streetName) => {
+        if (isClosed) {
+            const street = allStreets.get(streetName);
+            if (street && !street.isClosed) {
+                // Forzar el estado cerrado y pintar
+                street.isClosed = true;
+                const overlayName = `closed_overlay_${street.id}`;
+                
+                // Crear y añadir el gráfico de cierre
+                let closedStreetGraphic = createStreetGraphic(street.dimensions, 0xE4080A);
+                closedStreetGraphic.name = overlayName;
+                street.container.addChild(closedStreetGraphic);
+                
+                console.log(`Repintada calle ${streetName} como cerrada`);
+            }
+        }
+    });
+}
+
+function clearAllStreetOverlays(allStreets = allStreetsRef.current) {
+    allStreets.forEach((street, streetName) => {
+        const overlayName = `closed_overlay_${street.id}`;
+        const existingOverlay = street.container.getChildByName(overlayName);
+        
+        if (existingOverlay) {
+            street.container.removeChild(existingOverlay);
+            existingOverlay.destroy();
+        }
+        
+        // Resetear el estado visual (no el lógico)
+        street.isClosed = false;
+    });
+}
+
   useEffect(() => {
+
+    function createCars(totalHort, totalVert, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, carsPerStreet = 1) {
+      const cars = [];
+      
+      // Crear carros para calles horizontales
+      for (let i = 1; i < totalHort; i++) {
+          const streetId1 = "H" + i + "0";
+          const streetId2 = "H" + i + (totalVert - 1);
+
+          // Crear múltiples carros para la primera calle horizontal
+          if (!excludedStreets.has(streetId1)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetY = 0;
+                  const car1 = new Car(
+                      texture1,
+                      false,
+                      { x: 0, y: wHS * i + halfWidthStreets / 2 + offsetY },
+                      1,
+                      Math.random() * 1.5 + 0.35
+                  );
+
+                  car1.currentStreet = allStreetsRef.current.get(streetId1);
+                  car1.nextStreet = car1.currentStreet;
+
+                  carsContainer.addChild(car1);
+                  cars.push(car1);
+              }
+          }
+
+          // Crear múltiples carros para la segunda calle horizontal
+          if (!excludedStreets.has(streetId2)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetY = 0;
+                  const car2 = new Car(
+                      texture2,
+                      false,
+                      { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
+                      -1,
+                      Math.random() * 1.5 + 0.8
+                  );
+
+                  car2.currentStreet = allStreetsRef.current.get(streetId2);
+                  car2.nextStreet = car2.currentStreet;
+
+                  carsContainer.addChild(car2);
+                  cars.push(car2);
+              }
+          }
+      }
+
+      // Crear carros para calles verticales
+      for (let i = 1; i < totalVert; i++) {
+          const streetId1 = "V" + i + "0";
+          const streetId2 = "V" + i + (totalHort - 1);
+
+          // Crear múltiples carros para la primera calle vertical
+          if (!excludedStreets.has(streetId1)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetX = 0;
+                  const car1 = new Car(
+                      texture1,
+                      true,
+                      { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: 0 },
+                      1,
+                      1 + Math.random() * 1.2
+                  );
+
+                  car1.currentStreet = allStreetsRef.current.get(streetId1);
+                  car1.nextStreet = car1.currentStreet;
+
+                  carsContainer.addChild(car1);
+                  cars.push(car1);
+              }
+          }
+
+          // Crear múltiples carros para la segunda calle vertical
+          if (!excludedStreets.has(streetId2)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetX = 0;
+                  const car2 = new Car(
+                      texture2,
+                      true,
+                      { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight },
+                      -1,
+                      1 + Math.random()
+                  );
+
+                  car2.currentStreet = allStreetsRef.current.get(streetId2);
+                  car2.nextStreet = car2.currentStreet;
+
+                  carsContainer.addChild(car2);
+                  cars.push(car2);
+              }
+          }
+      }
+      //refillStreets(closedStreetsRef, allStreetsRef);
+      return cars;
+    }
+    
+
     //Función para decidir la dirección del coche
     function decideNextStreet(car, intersection, closedStreetsRef) {
       //console.log(`Decidiendo para coche ${car.id} en intersección ${intersection.id}`);
@@ -302,7 +413,6 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
       setNameStreets(allStreetsRef.current, labelContainer);
-      setNameIntersections(allIntersectionsRef.current, labelContainer);
 
       // Asignar calles conectadas a las intersecciones
       for (let i = 0; i <= hortBlocks; i++) {
@@ -330,12 +440,15 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       setComplex(blockContainer);
 
       for (const [id, intersection] of allIntersectionsRef.current) {
-
+        if (!["I22", "I21", "I12"].includes(id)) continue;
+        
         // 4 lados por intersección
         const topLight = new TrafficLight(intersection, 'top', streetContainer);
         const bottomLight = new TrafficLight(intersection, 'bottom', streetContainer);
         const leftLight = new TrafficLight(intersection, 'left', streetContainer);
         const rightLight = new TrafficLight(intersection, 'right', streetContainer);
+
+        trafficLights.push(topLight, bottomLight, leftLight, rightLight);
 
         const semaforos = [
           { light: topLight, initial: 'green' },
@@ -348,137 +461,36 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
           light.setState(initial);
           light.startTimer();
         }
-
-        if (trafficLights_intersectionInit.includes(id)) { // Add to Traffic Lights Activated
-          trafficLights.push(topLight, bottomLight, leftLight, rightLight);
-        }
-        else { // Add to Traffic Lights Deactivated
-          topLight.deactivate();
-          bottomLight.deactivate();
-          leftLight.deactivate();
-          rightLight.deactivate();
-          trafficLights_deactivated.push(topLight, bottomLight, leftLight, rightLight);
-        }
-      }
-      setSemaforosHabilit(trafficLights.length);
-      setSemaforosInhabilit(trafficLights_deactivated.length);
-
-      // Creación de carros
-      const cars = [];
-      // Crear carros para calles horizontales
-      for (let i = 1; i < hortBlocks; i++) {
-        // Evito spawnear coches en calles excluidas
-        const streetId1 = "H" + i + "0";
-        const streetId2 = "H" + i + (vertBlocks - 1);
-
-        // Carro 1: Se mueve hacia la derecha en el carril superior
-        if (!excludedStreets.has(streetId1)) {
-          const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car1 = new Car(
-            texture1,
-            false,
-            { x: 0, y: wHS * i + halfWidthStreets / 2 },
-            1,
-            Math.random() * 1.5 +  0.35
-          );
-
-          // Asignación de calle inicial
-          car1.currentStreet = allStreetsRef.current.get(streetId1);
-          car1.nextStreet = car1.currentStreet;
-
-          carsContainer.addChild(car1);
-          cars.push(car1);
-        }
-
-        // Carro 2: Se mueve hacia la izquierda en el carril inferior
-        if (!excludedStreets.has(streetId2)) {
-          const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car2 = new Car(
-            texture2,
-            false,
-            { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 },
-            -1,
-            Math.random() * 1.5 + 0.8
-          );
-
-          // Asignación de calle inicial
-          car2.currentStreet = allStreetsRef.current.get(streetId2);
-          car2.nextStreet = car2.currentStreet;
-
-          carsContainer.addChild(car2);
-          cars.push(car2);
-        }
       }
 
-      // Crear carros para calles verticales
-      for (let i = 1; i < vertBlocks; i++) {
-        // Evito spawnear coches en calles excluidas
-        const streetId1 = "V" + i + "0";
-        const streetId2 = "V" + i + (hortBlocks - 1);
-
-        // Carro 1: Se mueve hacia abajo en el carril izquierdo
-        if (!excludedStreets.has(streetId1)) {
-          const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car1 = new Car(
-            texture1,
-            true,
-            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2, y: 0 },
-            1,
-            1 + Math.random() * 1.2
-          );
-
-          // Asignación de calle inicial
-          car1.currentStreet = allStreetsRef.current.get(streetId1);
-          car1.nextStreet = car1.currentStreet;
-
-          carsContainer.addChild(car1);
-          cars.push(car1);
-        }
-
-        // Carro 2: Se mueve hacia arriba en el carril derecho
-        if (!excludedStreets.has(streetId2)) {
-          const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car2 = new Car(
-            texture2,
-            true,
-            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2, y: canvasHeight },
-            -1,
-            1 + Math.random()
-          );
-
-          // Asignación de calle inicial
-          car2.currentStreet = allStreetsRef.current.get(streetId2);
-          car2.nextStreet = car2.currentStreet;
-
-          carsContainer.addChild(car2);
-          cars.push(car2);
-        }
-      }
-
+      //let totalCars = carsGenerated(0);
+      const cars = createCars(hortBlocks, vertBlocks, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, totalCars);
       carsRef.current = cars;
-    
-      //Etiquetado de coches, debug
-  //     cars.forEach(car => {
-  //   const label = new PIXI.HTMLText({
-  //     text: `${car.id}`,
-  //     style: {
-  //       fontFamily: 'Arial',
-  //       fontSize: 18,
-  //       fill: '#000000ff',
-  //       align: 'center',
-  //     },
-  //   });
-  //   label.anchor.set(0.5);
-  // app.ticker.add(() => { label.position.copyFrom(car.position); });
-  // app.stage.addChild(label);
+      console.log("Calles cerradas actuamente: ",closedStreetsRef.current);
+      //refillStreets();
+      //syncClosedStreetsVisualization();
+      
+      cars.forEach(car => {
+      const label = new PIXI.HTMLText({
+        text: `${car.id}`,
+        style: {
+          fontFamily: 'Arial',
+          fontSize: 18,
+          fill: '#000000ff',
+          align: 'center',
+        },
+      });
+      label.anchor.set(0.5);
+      app.ticker.add(() => { label.position.copyFrom(car.position); });
+      app.stage.addChild(label);
 
-  // const box = new PIXI.Graphics();
-  // app.ticker.add(() => {
-  //   box.clear().lineStyle(1, 0xff0000, 1)
-  //     .drawRect(car.getBounds().x, car.getBounds().y, car.getBounds().width, car.getBounds().height);
-  // });
-  // app.stage.addChild(box);
-  // });
+      const box = new PIXI.Graphics();
+      app.ticker.add(() => {
+        box.clear().lineStyle(1, 0xff0000, 1)
+          .drawRect(car.getBounds().x, car.getBounds().y, car.getBounds().width, car.getBounds().height);
+      });
+      app.stage.addChild(box);
+    });
       // Configurar el game loop
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
@@ -753,11 +765,12 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     initPixiApp();
 
     setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
-                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, openAllStreets, getClosedStreets});
+                    deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval });
     
     const interval = setInterval(() => {
       // Número de carros
       const currentNumCars = carsRef.current.length;
+      
       setNumCars(currentNumCars);
 
       // Número de calles cerradas
