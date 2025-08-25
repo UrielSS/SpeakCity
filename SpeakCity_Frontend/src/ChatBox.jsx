@@ -126,7 +126,6 @@ function ChatBox() {
       accion === 'trafico_medio' ||
       accion === 'trafico_alto'
     ) {
-      console.log("Cambio de trafico a",densidad_vehicular);
       changeDensity(densidad_vehicular);
     }
     

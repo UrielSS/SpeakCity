@@ -158,7 +158,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
   };
 
   //funcion de carros por calle (por agregar a backend)
-  const changeDensity2 = (density) =>{
+  const changeDensity = (density) =>{
     var total = 0;
     switch(density){
       case 0:
@@ -219,20 +219,29 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     }
   };
 
-  
+  /*
+  //funcion de carros por calle (por agregar a backend)
+  function carsGenerated(density){
+    var total = 0;
+    switch(density){
+      case 0:
+        total = 1;
+        break;
+      case 1:
+        total = 2;
+        break;
+      case 2:
+        total = 3;
+        break;
+      default:
+        total = 1;
+        break;
+    }
+    return total;
+  };*/
 
 
   useEffect(() => {
-    function changeDensity(densidad) {
-        var totalCars = changeDensity2(densidad);
-        const { cars, container } = createCars(hortBlocks, vertBlocks, excludedStreets, wHS, 
-                                            halfWidthStreets, canvasWidth, wVS, canvasHeight, 
-                                            allStreetsRef, totalCars);
-        carsRef.current = cars;
-        
-        // Retornar el container para que el caller lo agregue al stage
-        return container;
-    }
     //Funcion para generar el arreglo de coches
     function createCars(totalHort, totalVert, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, carsPerStreet = 1) {
       const cars = [];
@@ -500,10 +509,9 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       setSemaforosInhabilit(trafficLights_deactivated.length);
 
       //let totalCars = carsGenerated(0);
-      const newContainer = changeDensity(0);
-      if (newContainer && !app.current.stage.children.includes(newContainer)) {
-          app.current.stage.addChild(newContainer);
-      }
+      var totalCars = changeDensity(2);
+      const cars = createCars(hortBlocks, vertBlocks, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, totalCars);
+      carsRef.current = cars;
       /*
       // Creación de carros
       const cars = [];
