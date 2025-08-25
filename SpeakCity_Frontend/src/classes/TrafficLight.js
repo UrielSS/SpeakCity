@@ -88,7 +88,7 @@ export class TrafficLight {
   }
 
   activate() {
-    this.setState('green');
+    //this.setState('green');
     this.startTimer();
   }
 

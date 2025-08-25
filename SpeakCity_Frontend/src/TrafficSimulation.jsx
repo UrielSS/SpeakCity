@@ -127,6 +127,26 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights_deactivated);
     const index = trafficLights_deactivated.indexOf(trafficLightModify);
     if (index !== -1) {
+      let arrayNameIntersection = nameTrafficLight.split(' ');
+      let nameIntersection = arrayNameIntersection[0];
+      let nameDirection = arrayNameIntersection[1].toLowerCase();
+      for (let [key, objectIntersection] of allIntersectionsRef.current) {
+        if (nameIntersection == key) {
+          let objectConnectedStreets = objectIntersection.connectedStreets;
+          let objectStreet = objectConnectedStreets[nameDirection];
+          if (objectStreet == null) {
+            return;
+          }
+        }
+      }
+
+      if (nameDirection == 'top' ||  nameDirection == 'bottom') {
+        trafficLightModify.setState('green');
+      }
+      else if (nameDirection == 'left' ||  nameDirection == 'right') {
+        trafficLightModify.setState('red');
+      }
+
       trafficLights_deactivated.splice(index, 1);
       trafficLights.push(trafficLightModify);
       trafficLightModify.activate();
@@ -475,7 +495,43 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
         }
 
         if (trafficLights_intersectionInit.includes(id)) { // Add to Traffic Lights Activated
-          trafficLights.push(topLight, bottomLight, leftLight, rightLight);
+          let objectConnectedStreets = intersection.connectedStreets;
+          // Top
+          if (objectConnectedStreets['top'] != null) {
+            trafficLights.push(topLight);
+          }
+          else {
+            topLight.deactivate();
+            trafficLights_deactivated.push(topLight);  
+          }
+
+          // Bottom
+          if (objectConnectedStreets['bottom'] != null) {
+            trafficLights.push(bottomLight);
+          }
+          else {
+            bottomLight.deactivate();
+            trafficLights_deactivated.push(bottomLight);  
+          }
+
+          // Left
+          if (objectConnectedStreets['left'] != null) {
+            trafficLights.push(leftLight);
+          }
+          else {
+            leftLight.deactivate();
+            trafficLights_deactivated.push(leftLight);  
+          }
+
+          // Right
+          if (objectConnectedStreets['right'] != null) {
+            trafficLights.push(rightLight);
+          }
+          else {
+            rightLight.deactivate();
+            trafficLights_deactivated.push(rightLight);  
+          }
+          
         }
         else { // Add to Traffic Lights Deactivated
           topLight.deactivate();

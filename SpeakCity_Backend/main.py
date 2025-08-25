@@ -65,6 +65,8 @@ SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04',
                     'I30', 'I31', 'I32', 'I33', 'I34',
                     'I40', 'I41', 'I42', 'I43', 'I44']
 
+INTERSECCIONES = SEMAFOROS_VALIDOS
+
 SEMAFOROS_VALIDOS_COPY = []
 for item in SEMAFOROS_VALIDOS:
     SEMAFOROS_VALIDOS_COPY.append(item + ' top')
@@ -168,7 +170,7 @@ SEMAFOROS VALIDOS: {SEMAFOROS_VALIDOS}
 COMANDO ESPECIAL:
 - Para abrir TODAS las calles cerradas, usa: accion='abrir_todas_calles', calle='TODAS'
 - Este comando detecta frases como: "abrir todas las calles", "reabrir todas las vías", "normalizar tráfico", "restablecer todas las calles"
--
+- Si el usuario pide activar los semaforos de una de estas intersecciones {INTERSECCIONES} entonces se regresan 4 acciones a ejecutar que es activar el semaforo de arriba, abajo, izquierda y derecha de la interseccion que corresponda 
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
