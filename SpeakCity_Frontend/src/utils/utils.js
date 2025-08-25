@@ -1,7 +1,7 @@
 // Utils/utils.js
 import * as PIXI from "pixi.js";
-import { Street } from "../Classes/Street";
-import { Intersection } from "../Classes/Intersection";
+import { Street } from "../classes/Street";
+import { Intersection } from "../classes/Intersection";
 import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "../utils/constants"; 
 
 const { width: canvasWidth, height: canvasHeight, hortBlocks, vertBlocks, halfWidthStreets } = CANVAS_CONFIG;
@@ -46,27 +46,6 @@ export const drawStreets = (container, streetsMap) => {
       }
     }
   }
-  
-  // // Calles perimetrales
-  // let topStreet = new Street("H_top", 
-  //   [2 * halfWidthStreets, 0, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
-  //   'horizontal', container);
-  // streetsMap.set("H_top", topStreet);
-
-  // let bottomStreet = new Street("H_bottom", 
-  //   [2 * halfWidthStreets, canvasHeight - 2 * halfWidthStreets, canvasWidth - 4 * halfWidthStreets, 2 * halfWidthStreets], 
-  //   'horizontal', container);
-  // streetsMap.set("H_bottom", bottomStreet);
-
-  // let leftStreet = new Street("V_left", 
-  //   [0, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
-  //   'vertical', container);
-  // streetsMap.set("V_left", leftStreet);
-
-  // let rightStreet = new Street("V_right", 
-  //   [canvasWidth - 2 * halfWidthStreets, 2 * halfWidthStreets, 2 * halfWidthStreets, canvasHeight - 4 * halfWidthStreets], 
-  //   'vertical', container);
-  // streetsMap.set("V_right", rightStreet);
 };
 
 export const drawIntersections = (container, intersectionsMap) => {
@@ -123,6 +102,26 @@ export const setNameStreets = (allStreets, container) => {
       html.x = value.dimensions[0] + value.dimensions[2] / 2;
       html.y = value.dimensions[1];
     }
+    container.addChild(html);
+  });
+};
+
+export const setNameIntersections = (allIntersections, container) => {
+  console.log(allIntersections);
+  allIntersections.forEach((value, key) => {
+    console.log(`${key}: ${value.dimensions}`);
+    const html = new PIXI.HTMLText({
+      text: `${key}`,
+      style: {
+        fontFamily: 'Arial',
+        fontSize: 14,
+        fill: '#dcdcdcff',
+        align: 'center',
+      },
+    });
+    
+    html.x = value.dimensions[0] + halfWidthStreets / 2;
+    html.y = value.dimensions[1] + halfWidthStreets / 2;
     container.addChild(html);
   });
 };

@@ -8,7 +8,8 @@ import {
   drawStreets, 
   drawIntersections,
   setComplex, 
-  setNameStreets 
+  setNameStreets,
+  setNameIntersections
 } from "./utils/utils";
 import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/constants";
 
@@ -301,6 +302,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       drawStreets(streetContainer, allStreetsRef.current);
       drawIntersections(intersectionContainer, allIntersectionsRef.current);
       setNameStreets(allStreetsRef.current, labelContainer);
+      setNameIntersections(allIntersectionsRef.current, labelContainer);
 
       // Asignar calles conectadas a las intersecciones
       for (let i = 0; i <= hortBlocks; i++) {
@@ -455,28 +457,28 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
 
       carsRef.current = cars;
     
+      //Etiquetado de coches, debug
+  //     cars.forEach(car => {
+  //   const label = new PIXI.HTMLText({
+  //     text: `${car.id}`,
+  //     style: {
+  //       fontFamily: 'Arial',
+  //       fontSize: 18,
+  //       fill: '#000000ff',
+  //       align: 'center',
+  //     },
+  //   });
+  //   label.anchor.set(0.5);
+  // app.ticker.add(() => { label.position.copyFrom(car.position); });
+  // app.stage.addChild(label);
 
-      cars.forEach(car => {
-    const label = new PIXI.HTMLText({
-      text: `${car.id}`,
-      style: {
-        fontFamily: 'Arial',
-        fontSize: 18,
-        fill: '#000000ff',
-        align: 'center',
-      },
-    });
-    label.anchor.set(0.5);
-  app.ticker.add(() => { label.position.copyFrom(car.position); });
-  app.stage.addChild(label);
-
-  const box = new PIXI.Graphics();
-  app.ticker.add(() => {
-    box.clear().lineStyle(1, 0xff0000, 1)
-      .drawRect(car.getBounds().x, car.getBounds().y, car.getBounds().width, car.getBounds().height);
-  });
-  app.stage.addChild(box);
-  });
+  // const box = new PIXI.Graphics();
+  // app.ticker.add(() => {
+  //   box.clear().lineStyle(1, 0xff0000, 1)
+  //     .drawRect(car.getBounds().x, car.getBounds().y, car.getBounds().width, car.getBounds().height);
+  // });
+  // app.stage.addChild(box);
+  // });
       // Configurar el game loop
       app.ticker.add((time) => {
         const deltaTime = time.deltaTime;
