@@ -169,7 +169,7 @@ SEMAFOROS VALIDOS: {SEMAFOROS_VALIDOS}
 COMANDO ESPECIAL:
 - Para abrir TODAS las calles cerradas, usa: accion='abrir_todas_calles', calle='TODAS'
 - Este comando detecta frases como: "abrir todas las calles", "reabrir todas las vías", "normalizar tráfico", "restablecer todas las calles"
--
+- En caso de que se reciba una orden de estilo "Cierra las H3 o V2", se deben de interpretar como las CALLES PERMITIDAS con ese subindice, por ejemplo: H3 -> H32, H33 y V2 -> V22, V23
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
