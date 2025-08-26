@@ -28,6 +28,7 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const closedStreetsRef = useRef(new Map());
   const trafficLights = [];
   const trafficLights_deactivated = [];
+  const carsPerStreet = 2;
 
   // Init Traffic Lights Default
   const trafficLights_intersectionInit = ["I22", "I21"];
@@ -262,109 +263,6 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
 
 
   useEffect(() => {
-    //Funcion para generar el arreglo de coches
-    function createCars(totalHort, totalVert, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, carsPerStreet = 1) {
-      const cars = [];
-      
-      // Crear carros para calles horizontales
-      for (let i = 1; i < totalHort; i++) {
-          const streetId1 = "H" + i + "0";
-          const streetId2 = "H" + i + (totalVert - 1);
-
-          // Crear múltiples carros para la primera calle horizontal
-          if (!excludedStreets.has(streetId1)) {
-              for (let j = 0; j < carsPerStreet; j++) {
-                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-                  const offsetY = 0;
-                  const car1 = new Car(
-                      texture1,
-                      false,
-                      { x: 0, y: wHS * i + halfWidthStreets / 2 + offsetY },
-                      1,
-                      Math.random() * 1.5 + 0.35
-                  );
-
-                  car1.currentStreet = allStreetsRef.current.get(streetId1);
-                  car1.nextStreet = car1.currentStreet;
-
-                  carsContainer.addChild(car1);
-                  cars.push(car1);
-              }
-          }
-
-          // Crear múltiples carros para la segunda calle horizontal
-          if (!excludedStreets.has(streetId2)) {
-              for (let j = 0; j < carsPerStreet; j++) {
-                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-                  const offsetY = 0;
-                  const car2 = new Car(
-                      texture2,
-                      false,
-                      { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
-                      -1,
-                      Math.random() * 1.5 + 0.8
-                  );
-
-                  car2.currentStreet = allStreetsRef.current.get(streetId2);
-                  car2.nextStreet = car2.currentStreet;
-
-                  carsContainer.addChild(car2);
-                  cars.push(car2);
-              }
-          }
-      }
-
-      // Crear carros para calles verticales
-      for (let i = 1; i < totalVert; i++) {
-          const streetId1 = "V" + i + "0";
-          const streetId2 = "V" + i + (totalHort - 1);
-
-          // Crear múltiples carros para la primera calle vertical
-          if (!excludedStreets.has(streetId1)) {
-              for (let j = 0; j < carsPerStreet; j++) {
-                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-                  const offsetX = 0;
-                  const car1 = new Car(
-                      texture1,
-                      true,
-                      { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: 0 },
-                      1,
-                      1 + Math.random() * 1.2
-                  );
-
-                  car1.currentStreet = allStreetsRef.current.get(streetId1);
-                  car1.nextStreet = car1.currentStreet;
-
-                  carsContainer.addChild(car1);
-                  cars.push(car1);
-              }
-          }
-
-          // Crear múltiples carros para la segunda calle vertical
-          if (!excludedStreets.has(streetId2)) {
-              for (let j = 0; j < carsPerStreet; j++) {
-                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-                  const offsetX = 0;
-                  const car2 = new Car(
-                      texture2,
-                      true,
-                      { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight },
-                      -1,
-                      1 + Math.random()
-                  );
-
-                  car2.currentStreet = allStreetsRef.current.get(streetId2);
-                  car2.nextStreet = car2.currentStreet;
-
-                  carsContainer.addChild(car2);
-                  cars.push(car2);
-              }
-          }
-      }
-      //refillStreets(closedStreetsRef, allStreetsRef);
-      return cars;
-    }
-
     //Función para decidir la dirección del coche
     function decideNextStreet(car, intersection, closedStreetsRef) {
       //console.log(`Decidiendo para coche ${car.id} en intersección ${intersection.id}`);
@@ -564,105 +462,105 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
       setSemaforosHabilit(trafficLights.length);
       setSemaforosInhabilit(trafficLights_deactivated.length);
 
-      //let totalCars = carsGenerated(0);
-      var totalCars = changeDensity(2);
-      const cars = createCars(hortBlocks, vertBlocks, excludedStreets, wHS, halfWidthStreets, canvasWidth, wVS, canvasHeight, allStreetsRef, carsContainer, totalCars);
-      carsRef.current = cars;
-      /*
       // Creación de carros
       const cars = [];
       // Crear carros para calles horizontales
       for (let i = 1; i < hortBlocks; i++) {
-        // Evito spawnear coches en calles excluidas
-        const streetId1 = "H" + i + "0";
-        const streetId2 = "H" + i + (vertBlocks - 1);
+          const streetId1 = "H" + i + "0";
+          const streetId2 = "H" + i + (vertBlocks - 1);
 
-        // Carro 1: Se mueve hacia la derecha en el carril superior
-        if (!excludedStreets.has(streetId1)) {
-          const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car1 = new Car(
-            texture1,
-            false,
-            { x: 0, y: wHS * i + halfWidthStreets / 2 },
-            1,
-            Math.random() * 1.5 +  0.35
-          );
+          // Crear múltiples carros para la primera calle horizontal
+          if (!excludedStreets.has(streetId1)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetY = 0;
+                  const car1 = new Car(
+                      texture1,
+                      false,
+                      { x: 0, y: wHS * i + halfWidthStreets / 2 + offsetY },
+                      1,
+                      Math.random() * 1.5 + 0.35
+                  );
 
-          // Asignación de calle inicial
-          car1.currentStreet = allStreetsRef.current.get(streetId1);
-          car1.nextStreet = car1.currentStreet;
+                  car1.currentStreet = allStreetsRef.current.get(streetId1);
+                  car1.nextStreet = car1.currentStreet;
 
-          carsContainer.addChild(car1);
-          cars.push(car1);
-        }
+                  carsContainer.addChild(car1);
+                  cars.push(car1);
+              }
+          }
 
-        // Carro 2: Se mueve hacia la izquierda en el carril inferior
-        if (!excludedStreets.has(streetId2)) {
-          const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car2 = new Car(
-            texture2,
-            false,
-            { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 },
-            -1,
-            Math.random() * 1.5 + 0.8
-          );
+          // Crear múltiples carros para la segunda calle horizontal
+          if (!excludedStreets.has(streetId2)) {
+              for (let j = 0; j < carsPerStreet; j++) {
+                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetY = 0;
+                  const car2 = new Car(
+                      texture2,
+                      false,
+                      { x: canvasWidth, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
+                      -1,
+                      Math.random() * 1.5 + 0.8
+                  );
 
-          // Asignación de calle inicial
-          car2.currentStreet = allStreetsRef.current.get(streetId2);
-          car2.nextStreet = car2.currentStreet;
+                  car2.currentStreet = allStreetsRef.current.get(streetId2);
+                  car2.nextStreet = car2.currentStreet;
 
-          carsContainer.addChild(car2);
-          cars.push(car2);
-        }
+                  carsContainer.addChild(car2);
+                  cars.push(car2);
+              }
+          }
       }
 
       // Crear carros para calles verticales
       for (let i = 1; i < vertBlocks; i++) {
-        // Evito spawnear coches en calles excluidas
-        const streetId1 = "V" + i + "0";
-        const streetId2 = "V" + i + (hortBlocks - 1);
+          const streetId1 = "V" + i + "0";
+          const streetId2 = "V" + i + (hortBlocks - 1);
 
-        // Carro 1: Se mueve hacia abajo en el carril izquierdo
-        if (!excludedStreets.has(streetId1)) {
-          const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car1 = new Car(
-            texture1,
-            true,
-            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2, y: 0 },
-            1,
-            1 + Math.random() * 1.2
-          );
+          // Crear múltiples carros para la primera calle vertical
+          if (!excludedStreets.has(streetId1)) {
+              for (let j = 0; j < carsPerStreet - 1; j++) {
+                  const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetX = 0;
+                  const car1 = new Car(
+                      texture1,
+                      true,
+                      { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: 0 },
+                      1,
+                      1 + Math.random() * 1.2
+                  );
 
-          // Asignación de calle inicial
-          car1.currentStreet = allStreetsRef.current.get(streetId1);
-          car1.nextStreet = car1.currentStreet;
+                  car1.currentStreet = allStreetsRef.current.get(streetId1);
+                  car1.nextStreet = car1.currentStreet;
 
-          carsContainer.addChild(car1);
-          cars.push(car1);
-        }
+                  carsContainer.addChild(car1);
+                  cars.push(car1);
+              }
+          }
 
-        // Carro 2: Se mueve hacia arriba en el carril derecho
-        if (!excludedStreets.has(streetId2)) {
-          const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
-          const car2 = new Car(
-            texture2,
-            true,
-            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2, y: canvasHeight },
-            -1,
-            1 + Math.random()
-          );
+          // Crear múltiples carros para la segunda calle vertical
+          if (!excludedStreets.has(streetId2)) {
+              for (let j = 0; j < carsPerStreet - 1; j++) {
+                  const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
+                  const offsetX = 0;
+                  const car2 = new Car(
+                      texture2,
+                      true,
+                      { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight },
+                      -1,
+                      1 + Math.random()
+                  );
 
-          // Asignación de calle inicial
-          car2.currentStreet = allStreetsRef.current.get(streetId2);
-          car2.nextStreet = car2.currentStreet;
+                  car2.currentStreet = allStreetsRef.current.get(streetId2);
+                  car2.nextStreet = car2.currentStreet;
 
-          carsContainer.addChild(car2);
-          cars.push(car2);
-        }
+                  carsContainer.addChild(car2);
+                  cars.push(car2);
+              }
+          }
       }
 
       carsRef.current = cars;
-      */
 
       //Etiquetado de coches, debug
   //     cars.forEach(car => {
