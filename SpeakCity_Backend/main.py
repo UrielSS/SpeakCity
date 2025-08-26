@@ -31,7 +31,7 @@ else:
     DEMO_MODE = False
     client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# Definición de acciones, causas y calles válidas (Diccionarios)
+# Definición de acciones, causas y calles válidas
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo_rojo', 'cambiar_semaforo_verde', 'activar_semaforo', 'desactivar_semaforo', 
                     'programar_semaforo'],
@@ -177,6 +177,7 @@ COMANDO ESPECIAL:
 - Este comando detecta frases como: "abrir todas las calles", "reabrir todas las vías", "normalizar tráfico", "restablecer todas las calles"
 - Si el usuario pide activar los semaforos de una de estas intersecciones {INTERSECCIONES} entonces se regresan 4 acciones a ejecutar que es activar el semaforo de arriba, abajo, izquierda y derecha de la interseccion que corresponda 
 - De acuerdo al trafico devuelve densidad_vehicular como un valor numerico en los casos "alto"=2, "medio"=1, "bajo"=0
+- En caso de que se reciba una orden de estilo "Cierra las H3 o V2", se deben de interpretar como las CALLES PERMITIDAS con ese subindice, por ejemplo: H3 -> H32, H33 y V2 -> V22, V23
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
