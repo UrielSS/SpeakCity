@@ -22,7 +22,7 @@ function App() {
         <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
         <h1 className="app-title">SpeakCity</h1>
         <button className="about-button" onClick={() => setShowModal(true)}>
-          Acerca de
+          Como Usar
         </button>
       </header>
 
@@ -30,14 +30,68 @@ function App() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Acerca de Nosotros</h2>
+            <h2>Instrucciones de Uso</h2>
             <p>
-              Ola
+              SpeakCity es un gemelo digital de tráfico urbano que permite simular y gestionar el flujo vehicular en una ciudad simplificada.
             </p>
-            <button onClick={() => setShowModal(false)}>Cerrar</button>
+
+            {/* Lista de lo que funciona */}
+            <h3>Lo que funciona:</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {["Abrir Cerrar la calle V11", "Cambia a rojo el semaforo de arriba de la intersección I22", "Establece a 8 segundos el semaforo derecho de la interseción I22"].map((item, index) => (
+                <li key={index} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "10px",
+                  padding: "8px",
+                  backgroundColor: index % 2 === 0 ? "#f9f9f9" : "white",
+                  borderRadius: "4px"
+                }}>
+                  <span style={{ flex: 1, marginRight: "12px" }}>{item}</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(item)}
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 12px",
+                      cursor: "pointer",
+
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    Copiar
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {/* Lista de lo que no funciona */}
+            <h3>Lo que no funciona:</h3>
+            <ul>
+              <li>Funciones como "Desvía el tráfico de la calle A a B"</li>
+            </ul>
+
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#e74c3c",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginTop: "20px"
+              }}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
+
 
       {/* Contenido principal */}
       <main className="main-content">
@@ -58,9 +112,9 @@ function App() {
                 <TrafficSimulation setTrafficAPI={setTrafficAPI}
                   setCloseStreets={(n) => setCallesCerradas(n)}
                   setOpenStreets={(n) => setCallesAbiertas(n)}
-                  setNumCars={(n) => setNumCarros(n)} 
+                  setNumCars={(n) => setNumCarros(n)}
                   setSemaforosHabilit={(n) => setSemaforosHabilitados(n)}
-                  setSemaforosInhabilit={(n) => setSemaforosInhabilitados(n)}/>
+                  setSemaforosInhabilit={(n) => setSemaforosInhabilitados(n)} />
               </div>
             </section>
           </div>
@@ -76,6 +130,10 @@ function App() {
 
         </TrafficContext.Provider>
       </main>
+
+      <footer className="app-footer">
+        <p>&copy; 2025 SpeakCity. Hecho por los PowerPuffGs</p>
+      </footer>
 
     </div>
   );
