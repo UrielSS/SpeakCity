@@ -324,8 +324,11 @@ function ChatBox() {
   // Lista ampliada de ejemplos para múltiples comandos
   const examples = [
     "Cierra la calle H20 por mantenimiento",
-    "Cierra de inmediato las calles H21, V21 y H22 por un supuesto accidente. Acto seguido, extiende la zona de restricción cerrando también V22 y H23 como medida preventiva, esto ya con menor prioridad",
-    // "La calle V32 se acaba de inundar",
+    "Cierra las calles H4 por congestión",
+    "Cierra de inmediato las calles H01, H02 por un supuesto accidente. Acto seguido, extiende la zona de restricción cerrando también V33 como medida preventiva, esto ya con menor prioridad",
+    "Crea semaforo en la intersección I23",
+    "Pon en rojo el semáforo de abajo de la intersección I21",
+    "Establece a 4 segundos el ciclo del semáforo de abajo de la intersección I21",
     // "Accidente en V11: cierra la calle, reporta incidente y redirige tráfico por V12",
     // "Emergencia en H20: bloquea vía, cambia semáforo en H21 y activa protocolo de emergencia",
     // "Construcción en V23: cierra calle, reduce velocidad en V22 y programa semáforo en H13"
