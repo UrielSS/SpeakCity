@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { Car } from "./classes/Car";
 import { TrafficLight } from "./classes/TrafficLight";
@@ -28,11 +28,32 @@ import { CANVAS_CONFIG, CALCULATED_VALUES, EXCLUDED_STREETS} from "./utils/const
   const closedStreetsRef = useRef(new Map());
   const trafficLights = [];
   const trafficLights_deactivated = [];
-  const carsPerStreet = 2;
+  const [carsPerStreet, setCarsPerStreet] = useState(2);
+  const [selectedDensity, setSelectedDensity] = useState('medium'); // Estado para controlar qué radio está seleccionado
+
 
   // Init Traffic Lights Default
   const trafficLights_intersectionInit = ["I22", "I21"];
 
+   const handleDensityChange = (e) => {
+    const density = e.target.value;
+    setSelectedDensity(density);
+    
+    // Mapear valores a números
+    switch(density) {
+      case 'low':
+        setCarsPerStreet(1);
+        break;
+      case 'medium':
+        setCarsPerStreet(2);
+        break;
+      case 'high':
+        setCarsPerStreet(3);
+        break;
+      default:
+        setCarsPerStreet(2);
+    }
+  };
 
   const closeStreet = async (nameStreet = "H10", allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
     const streetToClose = allStreets.get(nameStreet);
@@ -957,7 +978,52 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
     };
   }, []);
 
-  return <div ref={pixiContainerRef} />;
+  return (
+    <div>
+      {/* Tu control de tráfico */}
+      <div className="traffic-control">
+        <h4>🚗 Control de tráfico</h4>
+        <div className="traffic-density">
+          <div>
+            <input 
+              type="radio" 
+              id="high" 
+              name="density" 
+              value="high" 
+              checked={selectedDensity === 'high'}
+              onChange={handleDensityChange}
+            />
+            <label htmlFor="high"> Alto</label>
+          </div>
+          <div>
+            <input 
+              type="radio" 
+              id="medium" 
+              name="density" 
+              value="medium" 
+              checked={selectedDensity === 'medium'}
+              onChange={handleDensityChange}
+            />
+            <label htmlFor="medium"> Medio</label>
+          </div>
+          <div>
+            <input 
+              type="radio" 
+              id="low" 
+              name="density" 
+              value="low" 
+              checked={selectedDensity === 'low'}
+              onChange={handleDensityChange}
+            />
+            <label htmlFor="low"> Bajo</label>
+          </div>
+        </div>
+      </div>
+
+      {/* Tu canvas de PIXI */}
+      <div ref={pixiContainerRef} />
+    </div>
+  );
 };
 
 export default TrafficSimulation;
