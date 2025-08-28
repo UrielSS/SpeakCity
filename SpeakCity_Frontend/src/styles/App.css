@@ -109,6 +109,17 @@
   background: #0056b3;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: right;
+}
+
+.header-buttons .about-button {
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
 /* Fondo oscuro del modal */
 .modal-overlay {
   position: fixed;
@@ -128,7 +139,7 @@
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  max-width: 500px;
+  max-width: 900px;
   width: 90%;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   animation: fadeIn 0.3s ease-out;

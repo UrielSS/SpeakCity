@@ -12,7 +12,7 @@ function ChatBox() {
   const [comandosEnProceso, setComandosEnProceso] = useState([]);
   const { closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green, 
           deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, 
-          openAllStreets, changeDensity
+          openAllStreets, changeDensity, closePeriferico, openPeriferico
    } = useContext(TrafficContext);
 
   // Verificar estado del backend al cargar
@@ -128,8 +128,12 @@ function ChatBox() {
     ) {
       changeDensity(densidad_vehicular);
     }
-    
-
+    else if (accion === 'cerrar_periferico') {
+      closePeriferico();
+    }
+    else if (accion === 'abrir_periferico') {
+      openPeriferico();
+    }
   };
 
   // Nueva función para ejecutar múltiples comandos secuencialmente
