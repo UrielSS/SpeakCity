@@ -151,7 +151,7 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
   closedStreetsList.forEach(street => {
     const streetToOpen = allStreets.get(street);
     if (streetToOpen && closedStreets.has(street)) {
-      streetToOpen.toggleClosed(); // ← ESTO ES LO QUE FALTABA
+      streetToOpen.toggleClosed();
       closedStreets.delete(street);
       streetsOpened.push(street);
     }
