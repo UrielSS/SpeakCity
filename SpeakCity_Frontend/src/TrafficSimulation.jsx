@@ -99,6 +99,74 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
   };
 };
 
+
+const closePeriferico = async (allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
+  const perifericoStreets = [
+    'H00', 'H01', 'H02', 'H03',
+    'V00', 'V01', 'V02', 'V03',
+    'H40', 'H41', 'H42', 'H43',
+    'V40', 'V41', 'V42', 'V43'
+  ];
+
+  const streetsClosed = [];
+  
+  for (const streetName of perifericoStreets) {
+    const streetToClose = allStreets.get(streetName);
+    if (streetToClose && !closedStreets.has(streetName)) {
+      streetToClose.toggleClosed();
+      closedStreets.set(streetName, true);
+      streetsClosed.push(streetName);
+    }
+  }
+  
+  return {
+    success: true,
+    message: `Se cerraron ${streetsClosed.length} calles`,
+    streetsClosed: streetsClosed
+  };
+};
+
+const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = closedStreetsRef.current) => {
+  const perifericoStreets = [
+    'H00', 'H01', 'H02', 'H03',
+    'V00', 'V01', 'V02', 'V03',
+    'H40', 'H41', 'H42', 'H43',
+    'V40', 'V41', 'V42', 'V43'
+  ]; 
+  
+  const closedStreetsList = perifericoStreets.filter(street => closedStreets.has(street));
+  
+  if (closedStreetsList.length === 0) {
+    console.log("No hay calles cerradas del periférico para abrir.");
+    return {
+      success: true,
+      message: "No hay calles cerradas del periférico",
+      streetsOpened: []
+    };
+  }
+  
+  const streetsOpened = [];
+  
+  // Iterar sobre las calles cerradas y abrirlas correctamente
+  closedStreetsList.forEach(street => {
+    const streetToOpen = allStreets.get(street);
+    if (streetToOpen && closedStreets.has(street)) {
+      streetToOpen.toggleClosed();
+      closedStreets.delete(street);
+      streetsOpened.push(street);
+    }
+  });
+  
+  console.log(`Calles del periférico abiertas: ${streetsOpened.join(', ')}`);
+  return {
+    success: true,
+    message: `Se abrieron ${streetsOpened.length} calles del periférico`,
+    streetsOpened: streetsOpened
+  };
+};
+
+
+
   const changeTrafficLight_red = (nameTrafficLight) => {
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
     trafficLightModify.setState('red');
@@ -658,8 +726,8 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
                 // Verificamos si el coche ya pasó la intersección
                 const [ix, iy, iw, ih] = light.intersection.dimensions;
                 const carCenter = {
-                  x: carAFrontSensor.x + carAFrontSensor.width / 2,
-                  y: carAFrontSensor.y + carAFrontSensor.height / 2
+                  x: carAFrontSensor.x + carAFrontSensor.width / 4,
+                  y: carAFrontSensor.y + carAFrontSensor.height / 4
                 };
 
                 let shouldStop = false;
@@ -762,9 +830,14 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
                 const carB = carsRef.current[j];
                 const carBBounds = carB.getBounds();
 
+                const matchesDirection =
+                (carA.isVertical && carB.isVertical) ||
+                (!carA.isVertical && !carB.isVertical);
+
                 if (areRectanglesIntersecting(carBBounds, intersectionBounds)) {
                   if (areRectanglesIntersecting(carAFrontSensor, intersectionBounds)){
-                    if (carB.id < carA.id)
+                    //if (carB.id < carA.id)
+                    if (carB.isStoppedByTraffic && !matchesDirection)
                       shouldCarAStop = true;
                   } else {
                     if (!carB.isStopped ) {
@@ -859,7 +932,7 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
 
     setTrafficAPI({ closeStreet, openStreet, changeTrafficLight_red, changeTrafficLight_green,
                     deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, 
-                    openAllStreets, getClosedStreets, changeDensity});
+                    openAllStreets, getClosedStreets, changeDensity, closePeriferico, openPeriferico });
     
     const interval = setInterval(() => {
       // Número de carros

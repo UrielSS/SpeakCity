@@ -10,4 +10,6 @@ export const TrafficContext = createContext({
   changeTrafficLightTimeInterval: () => {},
   openAllStreets: () => {},
   changeDensity: () => {},
+  closePeriferico: () => {},
+  openPeriferico: () => {},
 });

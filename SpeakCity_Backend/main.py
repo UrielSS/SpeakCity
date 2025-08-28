@@ -35,10 +35,8 @@ else:
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo_rojo', 'cambiar_semaforo_verde', 'activar_semaforo', 'desactivar_semaforo', 
                     'programar_semaforo'],
-    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo', 'abrir_todas_calles'],
+    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo', 'abrir_todas_calles', 'cerrar_periferico', 'abrir_periferico'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
-    'velocidad': ['cambiar_limite', 'zona_escolar', 'reducir_velocidad', 'aumentar_velocidad'],
-    'emergencia': ['activar_emergencia', 'desactivar_emergencia', 'via_emergencia'],
     'densidad': ['trafico_alto', 'trafico_medio', 'trafico_bajo']
 }
 
@@ -54,14 +52,15 @@ CALLES_VALIDAS = [
                     'H32', 'H33',
                     'V00', 'V01', 'V02', 'V03',
                     'V10', 'V11', 'V12', 'V13',
-                    'V20', 'V23',
+                    'V22', 'V23',
                     'V30', 'V31', 'V33', 
                     'V40', 'V41', 'V42', 'V43', 
-                    'H40', 'H41', 'H42', 'H43'
+                    'H40', 'H41', 'H42', 'H43', 
+                    'PERIFERICO', 'PERIFÉRICO', 'PERIFERICA', 'PERIFÉRICA', 'CALLES LATERALES', 'CALLE LATERAL', 'LA PERIFERIA', 'LA PERIFÉRICA', 'LA PERIFERICA'
                 ]
 
 SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04', 
-                    'I10', 'I11', 'I12', 'I13', 'I14',
+                    'I10', 'I11', 'I13', 'I14',
                     'I20', 'I21', 'I22', 'I23', 'I24',
                     'I30', 'I31', 'I32', 'I33', 'I34',
                     'I40', 'I41', 'I42', 'I43', 'I44']
@@ -130,11 +129,11 @@ class RespuestaMultipleComandos(BaseModel):
 def es_comando_trafico_valido(mensaje: str) -> bool:
     """Validamos si el mensaje está relacionado con tráfico"""
     palabras_trafico = [
-        'semaforo', 'tráfico', 'calle', 'avenida', 'carril', 'congestion',
+        'semáforo', 'semaforo', 'tráfico', 'calle', 'avenida', 'carril', 'congestion',
         'accidente', 'velocidad', 'flujo', 'interseccion', 'via', 'ruta',
         'bloqueo', 'emergencia', 'construccion', 'mantenimiento', 'abrir', 
         'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque',
-        'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre',
+        'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre','destruir','destruye'
         'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra',
         'alto', 'medio', 'bajo'
     ]
@@ -178,6 +177,10 @@ COMANDO ESPECIAL:
 - Si el usuario pide activar los semaforos de una de estas intersecciones {INTERSECCIONES} entonces se regresan 4 acciones a ejecutar que es activar el semaforo de arriba, abajo, izquierda y derecha de la interseccion que corresponda 
 - De acuerdo al trafico devuelve densidad_vehicular como un valor numerico en los casos "alto"=2, "medio"=1, "bajo"=0
 - En caso de que se reciba una orden de estilo "Cierra las H3 o V2", se deben de interpretar como las CALLES PERMITIDAS con ese subindice, por ejemplo: H3 -> H32, H33 y V2 -> V22, V23
+- Para el PERIFÉRICO:
+  * Si el usuario pide CERRAR el periférico, la perifería, las calles laterales o un sinonimo de este: usar accion='cerrar_periferico'
+  * Si el usuario pide ABRIR el periférico, las calles laterales o un sinonimo de este: usar accion='abrir_periferico'
+
 
 REGLAS DE ORDENAMIENTO:
 1. Emergencias primero (orden_ejecucion: 1)
@@ -359,7 +362,7 @@ def chat():
                     "response_mime_type": "application/json",
                     "response_schema": RespuestaMultipleComandos,
                     "temperature": 0.1,
-                    "max_output_tokens": 800  # Aumentado para múltiples comandos
+                    "max_output_tokens": 1200  # Aumentado para múltiples comandos
                 }
             )
             print('eeee')
@@ -407,6 +410,7 @@ def chat():
             "success": False,
             "demo_mode": DEMO_MODE
         }), 500
+    
 
 # Endpoint adicional para comandos individuales (retrocompatibilidad)
 @app.route('/api/chat/single', methods=['POST'])

@@ -14,6 +14,14 @@ function App() {
   const [semaforosInhabilitados, setSemaforosInhabilitados] = useState(0);
   const [trafficAPI, setTrafficAPI] = React.useState({});
 
+  // Función para hacer scroll al dashboard
+  const scrollToDashboard = () => {
+    const dashboard = document.querySelector('.dashboard');
+    if (dashboard) {
+      dashboard.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="app-container">
 
@@ -21,9 +29,19 @@ function App() {
       <header className="app-header">
         <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
         <h1 className="app-title">SpeakCity</h1>
-        <button className="about-button" onClick={() => setShowModal(true)}>
-          Como Usar
-        </button>
+
+        <div class="header-buttons">
+
+          <button className="about-button" onClick={scrollToDashboard}>
+            Dashboard
+          </button>
+          
+          <button className="about-button" onClick={() => setShowModal(true)}>
+            ¿Cómo Usar?
+          </button>
+
+        </div>
+        
       </header>
 
       {/* Modal de información */}
@@ -34,6 +52,9 @@ function App() {
             <p>
               SpeakCity es un gemelo digital de tráfico urbano que permite simular y gestionar el flujo vehicular en una ciudad simplificada.
             </p>
+            
+              <p><strong>Para operar semáforos, haz referencia a la intersección donde se encuentran o a su posición en la calle (arriba, abajo, izquierda, derecha).</strong></p>
+              <p><strong>Para controlar las calles, haz referencia a su nombre en el mapa.</strong></p>
 
             {/* Lista de lo que funciona */}
             <h3>Lo que funciona:</h3>
