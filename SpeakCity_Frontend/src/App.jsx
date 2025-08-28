@@ -27,11 +27,12 @@ function App() {
 
       {/* Header principal */}
       <header className="app-header">
-        <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
-        <h1 className="app-title">SpeakCity</h1>
+        <div className="header-left">
+          <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
+          <h1 className="app-title">SpeakCity</h1>
+        </div>
 
-        <div class="header-buttons">
-
+        <div className="header-buttons">
           <button className="about-button" onClick={scrollToDashboard}>
             Dashboard
           </button>
@@ -59,7 +60,7 @@ function App() {
             {/* Lista de lo que funciona */}
             <h3>Lo que funciona:</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {["Cerrar la calle V11", "Cambia a rojo el semaforo de arriba de la intersección I22", "Establece a 8 segundos el semaforo derecho de la interseción I22", "Abre todas las calles cerradas"].map((item, index) => (
+              {["Cerrar la calle V11", "Cambia a rojo el semaforo de arriba de la intersección I22", "Establece a 8 segundos el semáforo derecho de la interseción I22", "Abre todas las calles cerradas", "Cierra H2", "Cierra el Periférico"].map((item, index) => (
                 <li key={index} style={{
                   display: "flex",
                   alignItems: "center",
