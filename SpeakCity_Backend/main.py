@@ -35,7 +35,8 @@ else:
 ACCIONES_VALIDAS = {
     'semaforo': ['cambiar_semaforo_rojo', 'cambiar_semaforo_verde', 'activar_semaforo', 'desactivar_semaforo', 
                     'programar_semaforo'],
-    'flujo': ['abrir_calle', 'cerrar_calle', 'redirigir_trafico', 'controlar_flujo', 'abrir_todas_calles', 'cerrar_periferico', 'abrir_periferico'],
+    'flujo': ['abrir_calle', 'cerrar_calle', 
+               'abrir_todas_calles', 'cerrar_periferico', 'abrir_periferico'],
     'incidente': ['reportar_incidente', 'limpiar_incidente', 'bloquear_via', 'desbloquear_via'],
     'densidad': ['trafico_alto', 'trafico_medio', 'trafico_bajo']
 }
@@ -180,6 +181,7 @@ COMANDO ESPECIAL:
 - Para el PERIFÉRICO:
   * Si el usuario pide CERRAR el periférico, la perifería, las calles laterales o un sinonimo de este: usar accion='cerrar_periferico'
   * Si el usuario pide ABRIR el periférico, las calles laterales o un sinonimo de este: usar accion='abrir_periferico'
+- Si el usuario pide "poner un semaforo en la intersección I12" o similar, se debe responder con la acción "activar_semaforo" en esa intersección
 
 
 REGLAS DE ORDENAMIENTO:
@@ -293,6 +295,133 @@ def validar_y_ordenar_comandos(comandos: List[ComandoTrafico]) -> List[ComandoTr
     
     return comandos_ordenados
 
+def manejar_json_truncado(response_text: str) -> Dict[str, Any]:
+    """
+    Maneja respuestas JSON truncadas por límite de tokens
+    """
+    try:
+        # Intentar parsear el JSON completo primero
+        return json.loads(response_text)
+    except json.JSONDecodeError as e:
+        logger.warning(f"JSON truncado detectado: {str(e)}")
+        
+        # Intentar reparar el JSON truncado
+        try:
+            # Buscar la estructura básica del JSON
+            if '"comandos":' in response_text:
+                # Encontrar el inicio del array de comandos
+                comandos_start = response_text.find('"comandos": [')
+                if comandos_start != -1:
+                    # Extraer la parte de comandos válida
+                    comandos_section = response_text[comandos_start:]
+                    
+                    # Encontrar comandos completos (que terminen con '}')
+                    comandos_completos = []
+                    nivel_llaves = 0
+                    comando_actual = ""
+                    en_comando = False
+                    
+                    i = comandos_section.find('[') + 1
+                    while i < len(comandos_section):
+                        char = comandos_section[i]
+                        
+                        if char == '{':
+                            if nivel_llaves == 0:
+                                en_comando = True
+                                comando_actual = "{"
+                            else:
+                                comando_actual += char
+                            nivel_llaves += 1
+                            
+                        elif char == '}':
+                            comando_actual += char
+                            nivel_llaves -= 1
+                            
+                            if nivel_llaves == 0 and en_comando:
+                                # Comando completo encontrado
+                                try:
+                                    cmd_dict = json.loads(comando_actual)
+                                    comandos_completos.append(cmd_dict)
+                                except:
+                                    pass  # Ignorar comandos mal formados
+                                
+                                comando_actual = ""
+                                en_comando = False
+                                
+                        elif en_comando:
+                            comando_actual += char
+                            
+                        i += 1
+                    
+                    # Crear respuesta con comandos recuperados
+                    if comandos_completos:
+                        return {
+                            "comandos": comandos_completos,
+                            "resumen_general": f"Se recuperaron {len(comandos_completos)} comandos de una respuesta truncada",
+                            "total_comandos": len(comandos_completos)
+                        }
+            
+            # Si no se pueden extraer comandos, generar respuesta de fallback
+            logger.warning("No se pudieron extraer comandos válidos del JSON truncado")
+            return generar_respuesta_fallback_truncada()
+            
+        except Exception as fallback_error:
+            logger.error(f"Error al reparar JSON truncado: {str(fallback_error)}")
+            return generar_respuesta_fallback_truncada()
+
+def generar_respuesta_fallback_truncada() -> Dict[str, Any]:
+    """
+    Genera una respuesta de fallback cuando no se puede reparar el JSON
+    """
+    return {
+        "comandos": [{
+            'accion': 'controlar_flujo',
+            'calle': 'V10',
+            'causa': 'optimizacion_flujo',
+            'prioridad': 'media',
+            'duracion_estimada': 15,
+            'orden_ejecucion': 1
+        }],
+        "resumen_general": "Respuesta simplificada debido a límite de tokens",
+        "total_comandos": 1
+    }
+
+def procesar_respuesta_api_con_manejo_truncado(response) -> RespuestaMultipleComandos:
+    """
+    Procesa la respuesta de la API con manejo de JSON truncado
+    """
+    try:
+        # Verificar si la respuesta fue truncada
+        if (hasattr(response, 'candidates') and 
+            len(response.candidates) > 0 and 
+            response.candidates[0].finish_reason == 'MAX_TOKENS'):
+            
+            logger.warning("Respuesta truncada por límite de tokens detectada")
+            
+            # Intentar parsear con el parser structured primero
+            if response.parsed is not None:
+                return response.parsed
+            
+            # Si no hay parsed, extraer el texto y procesarlo
+            content_text = response.candidates[0].content.parts[0].text
+            respuesta_dict = manejar_json_truncado(content_text)
+            return RespuestaMultipleComandos(**respuesta_dict)
+        
+        # Respuesta normal sin truncado
+        if response.parsed is not None:
+            return response.parsed
+        
+        # Fallback para respuestas normales sin parsed
+        content_json = response.candidates[0].content.parts[0].text
+        data = json.loads(content_json)
+        return RespuestaMultipleComandos(**data)
+        
+    except Exception as e:
+        logger.error(f"Error al procesar respuesta de API: {str(e)}")
+        # Generar respuesta de emergencia
+        respuesta_dict = generar_respuesta_fallback_truncada()
+        return RespuestaMultipleComandos(**respuesta_dict)
+
 @app.route('/')
 def hello_world():
     return jsonify({
@@ -354,26 +483,31 @@ def chat():
             respuesta_dict = generar_respuesta_demo_multiple(mensaje_sanitizado)
             respuesta = RespuestaMultipleComandos(**respuesta_dict)
         else:
-            prompt = generar_prompt_multicomando(mensaje_sanitizado)
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": RespuestaMultipleComandos,
-                    "temperature": 0.1,
-                    "max_output_tokens": 1200  # Aumentado para múltiples comandos
-                }
-            )
-            print('eeee')
-            print(f'Response Antes de parsed: {response}')
-            print(f'Response parsed: {response.parsed}')
-            respuesta: RespuestaMultipleComandos = response.parsed
-            if respuesta is None:
-                content_json = response.candidates[0].content.parts[0].text
-                data = json.loads(content_json)
-                respuesta = RespuestaMultipleComandos(**data)
-            print(f'Final Respuesta: {respuesta}')
+            try:
+                prompt = generar_prompt_multicomando(mensaje_sanitizado)
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": RespuestaMultipleComandos,
+                        "temperature": 0.1,
+                        "max_output_tokens": 1200
+                    }
+                )
+
+            except Exception as api_error:
+                if "maximum context length" in str(api_error).lower() or "MAX_TOKENS" in str(api_error):
+                    return jsonify({
+                        'error': 'La respuesta fue truncada por límite de tokens. Intenta simplificar el comando.',
+                        'success': False,
+                        'suggestion': 'Prueba con comandos más específicos o menos complejos.'
+                    }), 400
+                else:
+                    raise api_error
+            respuesta = procesar_respuesta_api_con_manejo_truncado(response)
+        
+        
             
         # Validar y ordenar comandos
         comandos_procesados = validar_y_ordenar_comandos(respuesta.comandos)

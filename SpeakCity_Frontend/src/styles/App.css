@@ -203,7 +203,7 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  max-height: 600px; /* O el alto que desees */
+  max-height: 800px; 
   overflow-y: auto;
   width: 100%;
   box-sizing: border-box;
@@ -214,7 +214,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 400px;
+  min-height: 500px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: var(--border-radius-lg);
@@ -222,7 +222,10 @@
   position: relative;
   overflow: visible;
   padding: 20px;
+  gap: 20px;
+  justify-content: space-between; /* Añadido para distribuir el espacio */
 }
+
 
 .map-section::before {
   content: '';
@@ -241,14 +244,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: top;
-  height: 100%;
+  justify-content: center; /* Cambiado de flex-start a center */
+  flex: 1; /* Esto hace que ocupe el espacio disponible */
+  width: 100%;
   color: var(--text-secondary);
   text-align: center;
   position: relative;
   z-index: 1;
-  width: 100%;
 }
+
 
 .map-placeholder h3 {
   font-size: 2rem;
@@ -349,6 +353,99 @@
     /*background-color: #f8d7da;*/ /* rojo suave */
     border-left: 5px solid #dc3545;
 }
+
+.traffic-control {
+  display: flex;
+  flex-direction: row;   /* Horizontal */
+  gap: 20px;             /* Espacio entre botones */
+  justify-content: center;
+  align-items: center;
+  padding: 10px 15px;
+  margin-top: auto;
+  
+}
+
+.traffic-control {
+  display: flex;
+  flex-direction: column; /* Cambiado de row a column para mejor organización */
+  gap: 15px; /* Aumentado el gap */
+  justify-content: center;
+  align-items: center;
+  padding: 0px; /* Aumentado el padding */
+  margin-top: 0; /* Removido margin-top: auto */
+}
+
+.traffic-control label:hover {
+  background: #eef6ff;
+}
+
+/* Radio estilizado */
+.traffic-control input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Títulos dentro del modal */
+.modal h2, .modal h3, .modal h4 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.modal p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.modal ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+}
+
+.modal ul li {
+  background: #f9fafb;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-left: 5px solid #3498db;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+
+.modal ul li:hover {
+  background: #eef6ff;
+}
+
+.modal ul li::before {
+  content: "➜";
+  color: #3498db;
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+/* Listas diferencia */
+.modal h4 + ul li {
+  border-left-color: #27ae60;
+}
+
+.modal h4:nth-of-type(1) + ul li {
+  border-left-color: #e67e22;
+}
+
+.traffic-control > div:last-child {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
 
 .app-footer {
   width: 100vw;

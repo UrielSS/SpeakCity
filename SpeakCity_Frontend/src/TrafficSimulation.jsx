@@ -1091,7 +1091,7 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
   }, []);
 
   return (
-    <div>
+    <div className="traffic-control">
       {/* Tu control de tráfico */}
       <div className="traffic-control">
         <h4>🚗 Control de tráfico</h4>

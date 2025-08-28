@@ -53,6 +53,23 @@ function App() {
             <p>
               SpeakCity es un gemelo digital de tráfico urbano que permite simular y gestionar el flujo vehicular en una ciudad simplificada.
             </p>
+
+            <p >Ten en cuenta las siguientes consideraciones al usar SpeakCity</p>
+            <h4>En las calles</h4>
+            <ul>
+              <li>Puedes abrir y cerrar calles haciendo referencia a su etiqueta en el mapa</li>
+              <li>Puedes abrir y cerrar calles completas refiriéndote a su posición (V o H) y a su primer índice</li>
+              <li>Puedes abrir y cerrar todas las calles en los bordes haciendo referencia al "periférico"</li>
+              <li>Después de cerrar varias calles, puedes abrirlas de nuevo haciendo referencia a "todas"</li>
+            </ul>
+            <h4>En los semáforos</h4>
+            <ul>
+              <li>Para modificar un semáforo, primero debes asegurarte que esté activo</li>
+              <li>Puedes crear semáforos haciendo referencia a la intersección donde se encuentren</li>
+              <li>Puedes crear semáforos indivuales haciendo referencia a su posición en la intersección (arriba, abajo, izquierda, derecha)</li>
+              <li>Puedes establecer como definitivo el estado de un semáforo poniéndolo en rojo o verde</li>
+              <li>Puedes programar el ciclo de un semáforo que esté activando especificando n segundos</li>
+            </ul>
             
               <p><strong>Para operar semáforos, haz referencia a la intersección donde se encuentran o a su posición en la calle (arriba, abajo, izquierda, derecha).</strong></p>
               <p><strong>Para controlar las calles, haz referencia a su nombre en el mapa.</strong></p>
