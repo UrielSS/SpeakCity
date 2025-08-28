@@ -31,6 +31,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
   const [carsPerStreet, setCarsPerStreet] = useState(2);
   const [selectedDensity, setSelectedDensity] = useState('medium');
   const carsContainerRef = useRef(null); // Referencia para el contenedor de coches
+   const isInitializedRef = useRef(false); // Nueva referencia para controlar la inicialización
 
 
   // Init Traffic Lights Default
@@ -62,7 +63,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car1 = new Car(
             texture1,
             false,
-            { x: halfWidthStreets * 2 + 5, y: wHS * i + halfWidthStreets / 2 + offsetY },
+            { x: halfWidthStreets * 2 + 9, y: wHS * i + halfWidthStreets / 2 + offsetY },
             1,
             Math.random() * 1.5 + 0.35
           );
@@ -83,7 +84,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car2 = new Car(
             texture2,
             false,
-            { x: canvasWidth - (halfWidthStreets * 2 + 5), y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
+            { x: canvasWidth - (halfWidthStreets * 2 + 9), y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
             -1,
             Math.random() * 1.5 + 0.8
           );
@@ -103,14 +104,14 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
       const streetId2 = "V" + i + (hortBlocks - 1);
 
       // Crear múltiples carros para la primera calle vertical
-      if (!excludedStreets.has(streetId1)) {
+      if (!excludedStreets.has(streetId1) && streetId1 !== 'V30') {
         for (let j = 0; j < carsPerStreetValue; j++) {
           const texture1 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
           const offsetX = 0;
           const car1 = new Car(
             texture1,
             true,
-            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: halfWidthStreets * 2 + 5 },
+            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: halfWidthStreets * 2 + 9 },
             1,
             1 + Math.random() * 1.2
           );
@@ -123,15 +124,19 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
         }
       }
 
+      var conta = carsPerStreetValue;
       // Crear múltiples carros para la segunda calle vertical
       if (!excludedStreets.has(streetId2)) {
-        for (let j = 0; j < carsPerStreetValue; j++) {
+        if(streetId1 == 'V30'){
+          var conta = carsPerStreetValue * 2;
+        }
+        for (let j = 0; j < conta; j++) {
           const texture2 = PIXI.Assets.get('car' + (1 + Math.floor(Math.random() * 5)));
           const offsetX = 0;
           const car2 = new Car(
             texture2,
             true,
-            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight - (halfWidthStreets * 2 + 5) },
+            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight - (halfWidthStreets * 2 + 9) },
             -1,
             1 + Math.random()
           );
@@ -147,6 +152,11 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
 
     carsRef.current = cars;
     setNumCars(cars.length);
+
+    if (isInitializedRef.current && appRef.current) {
+      appRef.current.ticker.update();
+    }
+
   };
 
   const handleDensityChange = (e) => {
@@ -653,7 +663,7 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
       setSemaforosInhabilit(trafficLights_deactivated.length);
 
       // Creación de carros
-      const cars = [];
+      //const cars = [];
       regenerateCars(carsPerStreet);
       // Crear carros para calles horizontales
       /*for (let i = 1; i < hortBlocks; i++) {
@@ -751,7 +761,7 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
           }
       }*/
 
-      carsRef.current = cars;
+      //carsRef.current = cars;
 
       //Etiquetado de coches, debug
   //     cars.forEach(car => {
