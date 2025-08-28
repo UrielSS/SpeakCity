@@ -658,8 +658,8 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
                 // Verificamos si el coche ya pasó la intersección
                 const [ix, iy, iw, ih] = light.intersection.dimensions;
                 const carCenter = {
-                  x: carAFrontSensor.x + carAFrontSensor.width / 2,
-                  y: carAFrontSensor.y + carAFrontSensor.height / 2
+                  x: carAFrontSensor.x + carAFrontSensor.width / 4,
+                  y: carAFrontSensor.y + carAFrontSensor.height / 4
                 };
 
                 let shouldStop = false;
@@ -762,9 +762,14 @@ const openAllStreets = (allStreets = allStreetsRef.current, closedStreets = clos
                 const carB = carsRef.current[j];
                 const carBBounds = carB.getBounds();
 
+                const matchesDirection =
+                (carA.isVertical && carB.isVertical) ||
+                (!carA.isVertical && !carB.isVertical);
+
                 if (areRectanglesIntersecting(carBBounds, intersectionBounds)) {
                   if (areRectanglesIntersecting(carAFrontSensor, intersectionBounds)){
-                    if (carB.id < carA.id)
+                    //if (carB.id < carA.id)
+                    if (carB.isStoppedByTraffic && !matchesDirection)
                       shouldCarAStop = true;
                   } else {
                     if (!carB.isStopped ) {

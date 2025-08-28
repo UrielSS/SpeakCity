@@ -22,7 +22,7 @@ function App() {
         <img src="assets/SpeakLogo.png" alt="Logo" className="logo" />
         <h1 className="app-title">SpeakCity</h1>
         <button className="about-button" onClick={() => setShowModal(true)}>
-          Como Usar
+          ¿Cómo Usar?
         </button>
       </header>
 
@@ -34,6 +34,9 @@ function App() {
             <p>
               SpeakCity es un gemelo digital de tráfico urbano que permite simular y gestionar el flujo vehicular en una ciudad simplificada.
             </p>
+
+            <p>Para operar semáforos, haz referencia a la intersección donde se encuentran o a su posición en la calle (arriba, abajo, izquierda, derecha).</p>
+            <p>Para controlar las calles, haz referencia a su nombre en el mapa.</p>
 
             {/* Lista de lo que funciona */}
             <h3>Lo que funciona:</h3>

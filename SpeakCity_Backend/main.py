@@ -61,7 +61,7 @@ CALLES_VALIDAS = [
                 ]
 
 SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04', 
-                    'I10', 'I11', 'I12', 'I13', 'I14',
+                    'I10', 'I11', 'I13', 'I14',
                     'I20', 'I21', 'I22', 'I23', 'I24',
                     'I30', 'I31', 'I32', 'I33', 'I34',
                     'I40', 'I41', 'I42', 'I43', 'I44']
@@ -130,11 +130,11 @@ class RespuestaMultipleComandos(BaseModel):
 def es_comando_trafico_valido(mensaje: str) -> bool:
     """Validamos si el mensaje está relacionado con tráfico"""
     palabras_trafico = [
-        'semaforo', 'tráfico', 'calle', 'avenida', 'carril', 'congestion',
+        'semáforo', 'semaforo', 'tráfico', 'calle', 'avenida', 'carril', 'congestion',
         'accidente', 'velocidad', 'flujo', 'interseccion', 'via', 'ruta',
         'bloqueo', 'emergencia', 'construccion', 'mantenimiento', 'abrir', 
         'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque',
-        'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre',
+        'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre','destruir','destruye'
         'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra',
         'alto', 'medio', 'bajo'
     ]
