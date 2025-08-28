@@ -57,7 +57,7 @@ function App() {
             {/* Lista de lo que funciona */}
             <h3>Lo que funciona:</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {["Cerrar la calle V11", "Cambia a rojo el semaforo de arriba de la intersección I22", "Establece a 8 segundos el semaforo derecho de la interseción I22", "Abre todas las calles cerradas", "Cierra H2", "C"].map((item, index) => (
+              {["Cerrar la calle V11", "Cambia a rojo el semaforo de arriba de la intersección I22", "Establece a 8 segundos el semáforo derecho de la interseción I22", "Abre todas las calles cerradas", "Cierra H2", "Cierra el Periférico"].map((item, index) => (
                 <li key={index} style={{
                   display: "flex",
                   alignItems: "center",

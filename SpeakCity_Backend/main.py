@@ -56,7 +56,7 @@ CALLES_VALIDAS = [
                     'V30', 'V31', 'V33', 
                     'V40', 'V41', 'V42', 'V43', 
                     'H40', 'H41', 'H42', 'H43', 
-                    'PERIFERICO', 'PERIFÉRICO', 'PERIFERICA', 'PERIFÉRICA', 'CALLES LATERALES', 'CALLE LATERAL', 'LA PERIFERIA', 'LA PERIFÉRICA', 'LA PERIFERICA'
+                    'PERIFERICO'
                 ]
 
 SEMAFOROS_VALIDOS = ['I00', 'I01', 'I02', 'I03', 'I04', 
@@ -180,6 +180,10 @@ COMANDO ESPECIAL:
 - Para el PERIFÉRICO:
   * Si el usuario pide CERRAR el periférico, la perifería, las calles laterales o un sinonimo de este: usar accion='cerrar_periferico'
   * Si el usuario pide ABRIR el periférico, las calles laterales o un sinonimo de este: usar accion='abrir_periferico'
+  * En ambos casos usar calle='PERIFERICO'
+- Si la calle o intersección no es válida, responde con accion: "comando_invalido"
+- Si el comando NO está relacionado con tráfico, responde con accion: "comando_invalido"
+
 
 
 REGLAS DE ORDENAMIENTO:
