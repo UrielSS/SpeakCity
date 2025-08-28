@@ -62,7 +62,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car1 = new Car(
             texture1,
             false,
-            { x: halfWidthStreets * 2 + 10, y: wHS * i + halfWidthStreets / 2 + offsetY },
+            { x: halfWidthStreets * 2 + 5, y: wHS * i + halfWidthStreets / 2 + offsetY },
             1,
             Math.random() * 1.5 + 0.35
           );
@@ -83,7 +83,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car2 = new Car(
             texture2,
             false,
-            { x: canvasWidth - 40, y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
+            { x: canvasWidth - (halfWidthStreets * 2 + 5), y: wHS * i + halfWidthStreets + halfWidthStreets / 2 + offsetY },
             -1,
             Math.random() * 1.5 + 0.8
           );
@@ -110,7 +110,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car1 = new Car(
             texture1,
             true,
-            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: halfWidthStreets * 2 + 10 },
+            { x: wVS * i + halfWidthStreets + halfWidthStreets / 2 + offsetX, y: halfWidthStreets * 2 + 5 },
             1,
             1 + Math.random() * 1.2
           );
@@ -131,7 +131,7 @@ const TrafficSimulation = ({ setTrafficAPI, setCloseStreets, setOpenStreets, set
           const car2 = new Car(
             texture2,
             true,
-            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight - 50 },
+            { x: wVS * i + halfWidthStreets - halfWidthStreets / 2 + offsetX, y: canvasHeight - (halfWidthStreets * 2 + 5) },
             -1,
             1 + Math.random()
           );
