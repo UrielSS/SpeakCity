@@ -135,7 +135,7 @@ def es_comando_trafico_valido(mensaje: str) -> bool:
         'desbloquear', 'liberar', 'V1', 'V2', 'V3', 'V4', 'H1', 'H2', 'H3', 'choque',
         'todas', 'todas las calles', 'reabrir', 'normalizar', 'restablecer','abre', 'reabre','destruir','destruye'
         'reabrir todas', 'abrir todas', 'normalizar tráfico', 'restablecer todas', 'la calle', 'cierra', 'Cierra',
-        'alto', 'medio', 'bajo'
+        'alto', 'medio', 'bajo', 'bloquea', 'bloquear', 'pon', 'poner', 'ponme'
     ]
     
     mensaje_lower = mensaje.lower()
