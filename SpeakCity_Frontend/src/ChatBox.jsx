@@ -14,6 +14,7 @@ function ChatBox() {
           deactivateTrafficLight, activateTrafficLight, changeTrafficLightTimeInterval, 
           openAllStreets, changeDensity
    } = useContext(TrafficContext);
+   const [selectedDensity, setSelectedDensity] = useState('high');
 
   // Verificar estado del backend al cargar
   useEffect(() => {
@@ -445,6 +446,29 @@ function ChatBox() {
             </li>
           ))}
         </ul>
+      </div>
+      <div className="traffic-control">
+        <h4>🚗 Control de tráfico</h4>
+        <div className="traffic-density">
+          <div>
+            <input type="radio" id="high" name="density" 
+            value="high" checked={selectedDensity === 'high'} // ← Controlado por estado
+            onChange={(e) => setSelectedDensity(e.target.value)}/>
+            <label htmlFor="high"> Alto</label>
+          </div>
+          <div>
+            <input type="radio" id="medium" name="density" 
+            value="medium" checked={selectedDensity === 'medium'}
+            onChange={(e) => setSelectedDensity(e.target.value)}/>
+            <label htmlFor="medium"> Medio</label>
+          </div>
+          <div>
+            <input type="radio" id="low" name="density" 
+            value="low" checked={selectedDensity === 'low'}
+            onChange={(e) => setSelectedDensity(e.target.value)} />
+            <label htmlFor="low"> Bajo</label>
+          </div>
+        </div>
       </div>
     </div>
   );
