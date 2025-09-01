@@ -318,12 +318,22 @@ const openPeriferico = (allStreets = allStreetsRef.current, closedStreets = clos
 
   const changeTrafficLight_red = (nameTrafficLight) => {
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+
+    if (!trafficLightModify) {
+      return;
+    }
+
     trafficLightModify.setState('red');
     trafficLightModify.stopTimer();
   };
 
   const changeTrafficLight_green = (nameTrafficLight) => {
     let trafficLightModify = getObjectTrafficLight(nameTrafficLight, trafficLights);
+    
+    if (!trafficLightModify) {
+      return;
+    }
+
     trafficLightModify.setState('green');
     trafficLightModify.stopTimer();
   };

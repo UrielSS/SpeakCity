@@ -92,7 +92,7 @@ class ComandoTrafico(BaseModel):
         v = v.lower().strip()
         acciones_permitidas = [accion for categoria in ACCIONES_VALIDAS.values() for accion in categoria]
         if v not in acciones_permitidas:
-            raise ValueError(f"Acción '{v}' no permitida. Acciones válidas: {acciones_permitidas}")
+            raise ValueError(f"Acción '{v}' no permitida. Acciones válidas: - Cerrar calle,  \n - Abrir calle,  \n - Cambiar semáforo de estado, \n -Cambiar tiempo semaforo, \n cerrar periférico, \n abrir periférico, \n abrir todas las calles")
         return v
 
     @validator('calle')
